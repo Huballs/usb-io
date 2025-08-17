@@ -5,7 +5,7 @@
 #ifndef PROTO_HPP
 #define PROTO_HPP
 
-namespace device {
+namespace device::proto {
     enum class data_type_t : uint8_t {
         NONE
         , GPIO
@@ -60,6 +60,7 @@ namespace device {
         uint8_t value;
         io_t io;
         uint8_t function;
+
     };
 }
 

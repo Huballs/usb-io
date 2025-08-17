@@ -8,8 +8,10 @@
 // #include "gui/gui.hpp"
 // #include "device/device_control.hpp"
 #include "sob-test.hpp"
+#include "device/device_control.hpp"
 #include "usb/usb-bulk.hpp"
 #include "usb/usb-bulk-agent.hpp"
+#include "gui/logger.hpp"
 
 namespace {
 
@@ -123,7 +125,12 @@ int main(const int argc, char *argv[3]) {
         , .rx_time_out_ms = 100U
     };
 
-    usb::UsbBulk<BUFFER_TOTAL_SIZE> usb_bulk(settings);
+    using usb_t = usb::UsbBulk<BUFFER_TOTAL_SIZE>;
+    usb_t usb_bulk(settings);
+
+    using usb_agent_t = usb::UsbBulkAgent<BUFFER_TOTAL_SIZE>;
+    using device_t = device::Device<BUFFER_TOTAL_SIZE
+                    , usb_t::tx_transfer_data_t>;
 
     //buffers::SimpleBuffer<uint8_t> rx_buffer(BUFFER_TOTAL_SIZE);
     //buffer.set_process_function(processor);
@@ -168,7 +175,9 @@ int main(const int argc, char *argv[3]) {
           auto board = env.create_mbox();
           env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 4U).binder(),
               [board, &usb_bulk](so_5::coop_t & coop) mutable {
-                coop.make_agent<usb::UsbBulkAgent<BUFFER_TOTAL_SIZE>>(board, usb_bulk);
+
+                coop.make_agent<usb_agent_t>(board, usb_bulk);
+                coop.make_agent<device_t>(board, gui::log);
              });
        });
 

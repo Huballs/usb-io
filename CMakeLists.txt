@@ -14,12 +14,12 @@ find_package(sobjectizer)
 add_executable(usb_io main.cpp
 #        gui/gui.cpp
 #        gui/gui.hpp
-#        gui/logger.cpp
-#        gui/logger.hpp
+        gui/logger.cpp
+        gui/logger.hpp
 #        gui/window_program.cpp
 #        gui/window_program.hpp
-#        device/device_control.cpp
-#        device/device_control.hpp
+        device/device_control.cpp
+        device/device_control.hpp
 #        device/program.hpp
 #        device/program.cpp
 #        gui/window_gpio.cpp

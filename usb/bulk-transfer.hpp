@@ -108,6 +108,7 @@ namespace usb::detail {
                 to_transmit->libusb_transfer = transfer;
                 to_transmit->libusb_handle = libusb_handle;
                 to_transmit->on_finish = callback;
+                //to_transmit->data = std::move(data);
                 std::copy(std::begin(*data), std::end(*data), std::begin(to_transmit->data));
                 libusb_fill_bulk_transfer(transfer, libusb_handle, endpoint | (ENDPOINT_TRANSMIT_BIT)
                                             , to_transmit->data.data(), DATA_SIZE

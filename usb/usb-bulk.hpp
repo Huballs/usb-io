@@ -50,7 +50,7 @@ namespace usb {
 
         void loop() noexcept;
 
-        status_t transmit   (f_on_transmit_t on_finish, tx_transfer_data_t* data) noexcept;
+        status_t transmit   (f_on_transmit_t on_finish, tx_transfer_data_t data) noexcept;
         status_t recieve    (f_on_recieve_t on_recieve);
 
         void set_on_hotplug(f_hotplug_t f) noexcept;
@@ -60,9 +60,10 @@ namespace usb {
 
         void close_device() noexcept;
 
-        [[nodiscard]] tx_transfer_data_t make_tx_data() const noexcept;
-        [[nodiscard]] rx_transfer_data_t make_rx_data() const noexcept;
+        [[nodiscard]] static constexpr tx_transfer_data_t make_tx_data() noexcept;
+        [[nodiscard]] static constexpr rx_transfer_data_t make_rx_data() noexcept;
 
+        // [[nodiscard]] constexpr std::function<tx_transfer_data_t(void)> tx_data_maker() noexcept;
     private:
         settings_t m_settings;
         libusb_device_handle * m_dev_handle = nullptr;
@@ -193,13 +194,13 @@ namespace usb {
         return status_t::SUCCESS;
     }
     UsbBulk_template_t
-    status_t UsbBulk<DATA_SIZE>::transmit   (typename tx_transfer::f_on_transmit_t on_finish, typename tx_transfer::data_t* data) noexcept {
+    status_t UsbBulk<DATA_SIZE>::transmit   (typename tx_transfer::f_on_transmit_t on_finish, typename tx_transfer::data_t data) noexcept {
 
         if (!has_device()) {
             return status_t::ERROR;
         }
 
-        return tx_transfer::submit(data, m_dev_handle, m_settings.ep_addr, m_settings.tx_time_out_ms, on_finish);
+        return tx_transfer::submit(&data, m_dev_handle, m_settings.ep_addr, m_settings.tx_time_out_ms, on_finish);
     }
     UsbBulk_template_t
     status_t UsbBulk<DATA_SIZE>::recieve    (typename rx_transfer::f_on_recieve_t on_recieve) {
@@ -249,13 +250,20 @@ namespace usb {
     }
 
     UsbBulk_template_t
-    [[nodiscard]] UsbBulk<DATA_SIZE>::tx_transfer_data_t UsbBulk<DATA_SIZE>::make_tx_data() const noexcept {
+    [[nodiscard]] constexpr UsbBulk<DATA_SIZE>::tx_transfer_data_t UsbBulk<DATA_SIZE>::make_tx_data() noexcept {
         return tx_transfer_data_t{};
     }
     UsbBulk_template_t
-    [[nodiscard]] UsbBulk<DATA_SIZE>::rx_transfer_data_t UsbBulk<DATA_SIZE>::make_rx_data() const noexcept {
+    [[nodiscard]] constexpr UsbBulk<DATA_SIZE>::rx_transfer_data_t UsbBulk<DATA_SIZE>::make_rx_data() noexcept {
         return rx_transfer_data_t{};
     }
+
+    // UsbBulk_template_t
+    // [[nodiscard]] std::function<UsbBulk<DATA_SIZE>::tx_transfer_data_t(void)> UsbBulk<DATA_SIZE>::tx_data_maker() noexcept {
+    //     return [this]() {
+    //         return make_tx_data();
+    //     };
+    // }
 }
 
 #endif //USB_BULK_HPP
