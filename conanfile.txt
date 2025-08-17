@@ -1,0 +1,9 @@
+[requires]
+libusb/1.0.26
+taywee-args/6.4.6
+ftxui/6.0.2
+sobjectizer/5.8.4
+
+[generators]
+CMakeDeps
+CMakeToolchain
