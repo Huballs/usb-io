@@ -85,7 +85,7 @@ namespace usb::detail {
             auto transfer = alloc_transfer();
 
             if (transfer == NULL) {
-                return status_t::ERROR;
+                return status_t::FAIL;
             }
 
             if constexpr (DIR == direction_t::RX) {
@@ -101,7 +101,7 @@ namespace usb::detail {
             } else if (DIR == direction_t::TX) {
 
                 if (data == nullptr) {
-                    return status_t::ERROR;
+                    return status_t::FAIL;
                 }
 
                 auto to_transmit = new to_transmit_t<DIR, DATA_SIZE>();
@@ -115,14 +115,14 @@ namespace usb::detail {
                                             , lib_usb_transmit_callback, to_transmit, timeout
                                             );
             } else {
-                return status_t::ERROR;
+                return status_t::FAIL;
             }
 
             return submit_(transfer);
         }
 
         static status_t submit_ (struct libusb_transfer * transfer) {
-            return libusb_submit_transfer(transfer) == LIBUSB_SUCCESS ? status_t::SUCCESS : status_t::ERROR;
+            return libusb_submit_transfer(transfer) == LIBUSB_SUCCESS ? status_t::SUCCESS : status_t::FAIL;
         }
 
     private:
@@ -134,7 +134,7 @@ namespace usb::detail {
         static void LIBUSB_CALL lib_usb_recieve_callback (struct libusb_transfer *transfer) {
              auto to_recieve = reinterpret_cast<to_recieve_t<DIR, DATA_SIZE>*>(transfer->user_data);
 
-             status_t status = status_t::ERROR;
+             status_t status = status_t::FAIL;
              typename BulkTransfer<DIR, DATA_SIZE>::data_t data;
 
              if ((LIBUSB_TRANSFER_COMPLETED == transfer->status)
@@ -142,7 +142,7 @@ namespace usb::detail {
                  std::copy(transfer->buffer, transfer->buffer + transfer->length, std::begin(data));
                  status = status_t::SUCCESS;
              } else {
-                 status = status_t::ERROR;
+                 status = status_t::FAIL;
              }
 
              to_recieve->on_recieve(status, data);
@@ -154,7 +154,7 @@ namespace usb::detail {
 
             auto to_transmit = reinterpret_cast<to_transmit_t<DIR, DATA_SIZE>*>(transfer->user_data);
 
-            status_t status = status_t::ERROR;
+            status_t status = status_t::FAIL;
 
             if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
                 status = status_t::SUCCESS;

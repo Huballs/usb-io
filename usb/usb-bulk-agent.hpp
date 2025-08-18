@@ -46,11 +46,11 @@ namespace usb {
             , m_usb_bulk(usb_bulk) {}
 
         void so_evt_start() override {
-            if (m_usb_bulk.init() == status_t::ERROR) {
+            if (m_usb_bulk.init() == status_t::FAIL) {
                 so_5::send<sig_error_mes>(m_board, usb_error_t::INIT);
             }
 
-            if (m_usb_bulk.recieve(m_f_on_recieve) == status_t::ERROR) {
+            if (m_usb_bulk.recieve(m_f_on_recieve) == status_t::FAIL) {
                 so_5::send<sig_error_mes>(m_board, usb_error_t::INIT);
             }
 

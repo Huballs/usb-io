@@ -7,7 +7,7 @@
 
 namespace usb {
     enum class status_t {
-        ERROR
+        FAIL
         , SUCCESS
     };
 

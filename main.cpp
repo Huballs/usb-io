@@ -204,3 +204,9 @@ int main(const int argc, char *argv[3]) {
 
     return EXIT_SUCCESS;
 }
+
+extern "C" void __assert_func(bool cond){}
+
+extern "C" void __getreent(){}
+
+extern "C" void* __locale_ctype_ptr = NULL;

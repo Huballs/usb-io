@@ -130,12 +130,12 @@ namespace usb {
         int rc = libusb_init(nullptr);
 
         if (LIBUSB_SUCCESS != rc) {
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         if (libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG) == 0) {
             libusb_exit (nullptr);
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         auto hot_plug_data = new hot_plug_data_t();
@@ -157,7 +157,7 @@ namespace usb {
         if (LIBUSB_SUCCESS != rc) {
             libusb_exit (nullptr);
             delete hot_plug_data;
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         rc = libusb_hotplug_register_callback (nullptr, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, m_settings.vid,
@@ -165,7 +165,7 @@ namespace usb {
         if (LIBUSB_SUCCESS != rc) {
             libusb_exit (nullptr);
             delete hot_unplug_data;
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         this->open_device();
@@ -188,7 +188,7 @@ namespace usb {
         int rc = libusb_open (dev, &m_dev_handle);
 
         if ((rc != LIBUSB_SUCCESS) || (m_dev_handle == nullptr)) {
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         return status_t::SUCCESS;
@@ -197,7 +197,7 @@ namespace usb {
     status_t UsbBulk<DATA_SIZE>::transmit   (typename tx_transfer::f_on_transmit_t on_finish, typename tx_transfer::data_t data) noexcept {
 
         if (!has_device()) {
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         return tx_transfer::submit(&data, m_dev_handle, m_settings.ep_addr, m_settings.tx_time_out_ms, on_finish);
@@ -205,7 +205,7 @@ namespace usb {
     UsbBulk_template_t
     status_t UsbBulk<DATA_SIZE>::recieve    (typename rx_transfer::f_on_recieve_t on_recieve) {
         if (!has_device()) {
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         return rx_transfer::submit(nullptr, m_dev_handle, m_settings.ep_addr, m_settings.rx_time_out_ms, on_recieve);
@@ -230,7 +230,7 @@ namespace usb {
                                                     , static_cast<uint16_t>(m_settings.pid));
 
         if (m_dev_handle == nullptr) {
-            return status_t::ERROR;
+            return status_t::FAIL;
         }
 
         return status_t::SUCCESS;

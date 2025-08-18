@@ -2,7 +2,7 @@
 
 ## conan
 ```
-conan install . --profile:a=msvcd  -s build_type=Debug --build=missing --output-folder=build
+conan install . --profile:a=msvcd  -s build_type=Debug --build=missing --output-folder=cmake-build-debug
 ```
 
 ## msvcd profile:
