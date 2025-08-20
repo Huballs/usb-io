@@ -7,7 +7,7 @@
 #include <csignal>
 // #include "gui/gui.hpp"
 // #include "device/device_control.hpp"
-#include "sob-test.hpp"
+
 #include "device/device_control.hpp"
 #include "usb/usb-bulk.hpp"
 #include "usb/usb-bulk-agent.hpp"
@@ -205,8 +205,8 @@ int main(const int argc, char *argv[3]) {
     return EXIT_SUCCESS;
 }
 
-extern "C" void __assert_func(bool cond){}
-
-extern "C" void __getreent(){}
-
-extern "C" void* __locale_ctype_ptr = NULL;
+// extern "C" int __assert_func(int cond){return 0;}
+//
+// extern "C" int __getreent(){return 1;}
+//
+// extern "C" void* __locale_ctype_ptr = NULL;

@@ -182,7 +182,7 @@ namespace device {
 
             auto tx_data_no_header = detail::cast_to_data(data);
 
-            size_t end = std::min(start + data_size, script.size());
+            size_t end = min(start + data_size, script.size());
 
             auto header = detail::cast_to_data_header(data);
 
@@ -209,7 +209,7 @@ namespace device {
         detail::cast_to_data_header(data)->type = proto::data_type_t::SCRIPT_NAME;
 
         strncpy(reinterpret_cast<char*>(detail::cast_to_data(data)), name.data()
-            , std::min(static_cast<size_t>(name.size()), (size_t)32U));
+            , min(static_cast<size_t>(name.size()), (size_t)32U));
 
         send(data);
     }

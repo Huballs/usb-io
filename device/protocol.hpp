@@ -39,29 +39,32 @@ namespace device::proto {
         , SCRIPT_ERROR
     };
 
-    struct __attribute__((packed)) status_t {
-        lua_status_t lua_status = lua_status_t::STOPPED;
-        char script_name[32U];
-        bool script_loaded { false };
-    };
-
-    struct __attribute__((packed)) data_header_t {
-        data_type_t type;
-        uint32_t size;
-    };
-
     enum class io_t : uint8_t {
         INPUT
         , OUTPUT
     };
 
-    struct __attribute__((packed)) data_gpio_t {
+#pragma pack(push,1)
+    struct /*__attribute__((packed))*/ status_t {
+        lua_status_t lua_status = lua_status_t::STOPPED;
+        char script_name[32U];
+        bool script_loaded { false };
+    };
+
+    struct /*__attribute__((packed))*/ data_header_t {
+        data_type_t type;
+        uint32_t size;
+    };
+
+    struct /*__attribute__((packed))*/ data_gpio_t {
         uint8_t gpio_n;
         uint8_t value;
         io_t io;
         uint8_t function;
 
     };
+#pragma pack(pop)
+
 }
 
 #endif //PROTO_HPP

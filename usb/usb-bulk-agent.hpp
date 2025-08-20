@@ -46,8 +46,12 @@ namespace usb {
             , m_usb_bulk(usb_bulk) {}
 
         void so_evt_start() override {
+
+            bool is_init = true;
+
             if (m_usb_bulk.init() == status_t::FAIL) {
                 so_5::send<sig_error_mes>(m_board, usb_error_t::INIT);
+                is_init = false;
             }
 
             if (m_usb_bulk.recieve(m_f_on_recieve) == status_t::FAIL) {
@@ -61,7 +65,8 @@ namespace usb {
                 so_5::send<sig_hotplug>(m_board);
             }
 
-            m_timer_loop = so_5::send_periodic<loop_signal>(*this, 0ms, 5ms);
+            if (is_init)
+                m_timer_loop = so_5::send_periodic<loop_signal>(*this, 0ms, 5ms);
         }
 
         void so_define_agent() override {
@@ -99,7 +104,30 @@ namespace usb {
         struct loop_signal : public so_5::signal_t {};
 
         void on_timer(mhood_t<loop_signal>) {
-            m_usb_bulk.loop();
+            static bool last_has_device  = false;
+
+            if (!m_usb_bulk.hot_plug_capable()) {
+
+                if (!m_usb_bulk.has_device()) {
+                    m_usb_bulk.open_device();
+                }
+
+                if (m_usb_bulk.has_device() != last_has_device) {
+                    if (m_usb_bulk.has_device())
+                        m_usb_bulk.call_internal_hotplug_callback();
+                    else
+                        m_usb_bulk.call_internal_hotunplug_callback();
+
+                    last_has_device = m_usb_bulk.has_device();
+                }
+            }
+
+            if (!m_usb_bulk.hot_plug_capable() && m_usb_bulk.has_device()) {
+                m_usb_bulk.loop();
+            } else if (m_usb_bulk.hot_plug_capable()) {
+                m_usb_bulk.loop();
+            }
+
         }
 
         void on_transmit_data(mhood_t<sig_transmit_data<DATA_SIZE>> s) {

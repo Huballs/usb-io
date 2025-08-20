@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28)
 project(usb_io)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 
@@ -39,7 +39,7 @@ add_executable(usb_io main.cpp
 #        gui/button.cpp
 #        gui/device_status.cpp
 #        gui/core_control.hpp
-        sob-test.hpp
+ #       sob-test.hpp
         usb/usb-bulk.cpp
         usb/usb-bulk.hpp
         usb/usb-v2.hpp
@@ -47,5 +47,5 @@ add_executable(usb_io main.cpp
         usb/usb-bulk-agent.hpp
 )
 
-target_link_libraries(usb_io libusb::libusb taywee::args ftxui::ftxui sobjectizer::StaticLib)
-target_include_directories(usb_io PUBLIC libusb::libusb taywee::args ftxui::ftxui taocpp::pegtl ${CONAN_LIBS})
+target_link_libraries(usb_io taywee::args ftxui::ftxui sobjectizer::StaticLib libusb::libusb)
+target_include_directories(usb_io PUBLIC taywee::args ftxui::ftxui)

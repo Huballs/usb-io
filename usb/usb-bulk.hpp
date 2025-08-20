@@ -7,11 +7,11 @@
 
 #include <cstddef>
 #include <array>
-#include <cstdint>
+#include <memory>
 #include <functional>
 #include <memory>
 #include <iostream>
-
+#include <optional>
 #include "bulk-transfer.hpp"
 #include "usb-v2.hpp"
 
@@ -28,6 +28,19 @@ namespace usb {
     };
 
     using f_hotplug_t = std::function<void(void)>;
+
+    namespace detail
+    {
+        struct hot_plug_data_t {
+            std::function<status_t(libusb_device *)> open_device;
+            std::optional<f_hotplug_t>*  on_hotplug;
+        };
+
+        struct hot_unplug_data_t {
+            std::function<void(void)> close_device;
+            std::optional<f_hotplug_t>*  on_hotunplug;
+        };
+    }
 
     #define UsbBulk_template_t template<size_t DATA_SIZE>
 
@@ -63,36 +76,35 @@ namespace usb {
         [[nodiscard]] static constexpr tx_transfer_data_t make_tx_data() noexcept;
         [[nodiscard]] static constexpr rx_transfer_data_t make_rx_data() noexcept;
 
-        // [[nodiscard]] constexpr std::function<tx_transfer_data_t(void)> tx_data_maker() noexcept;
+        [[nodiscard]] bool hot_plug_capable() const noexcept;
+
+        void call_internal_hotplug_callback() noexcept;
+        void call_internal_hotunplug_callback() noexcept;
+
+        status_t open_device() noexcept;
+
     private:
         settings_t m_settings;
         libusb_device_handle * m_dev_handle = nullptr;
 
     protected:
         status_t open_device(libusb_device *dev) noexcept;
-        status_t open_device() noexcept;
+
 
         std::optional<f_hotplug_t> m_on_hotplug;
         std::optional<f_hotplug_t> m_on_hotunplug;
 
-    };
+        std::unique_ptr<detail::hot_plug_data_t> m_hot_plug_data;
+        std::unique_ptr<detail::hot_unplug_data_t> m_hot_unplug_data;
 
-
-    struct hot_plug_data_t {
-        std::function<status_t(libusb_device *)> open_device;
-        std::optional<f_hotplug_t>*  on_hotplug;
-    };
-
-    struct hot_unplug_data_t {
-        std::function<void(void)> close_device;
-        std::optional<f_hotplug_t>*  on_hotunplug;
+        bool m_hot_plug_capable = false;
     };
 
     static int LIBUSB_CALL hotplug_callback([[maybe_unused]] libusb_context *ctx, [[maybe_unused]] libusb_device *dev
                                             , [[maybe_unused]] libusb_hotplug_event event
                                             , [[maybe_unused]]  void *user_data) {
 
-        auto usb = reinterpret_cast<hot_plug_data_t*>(user_data);
+        auto usb = reinterpret_cast<detail::hot_plug_data_t*>(user_data);
 
         usb->open_device(dev);
 
@@ -107,7 +119,7 @@ namespace usb {
                                                     , [[maybe_unused]] libusb_hotplug_event event
                                                     , [[maybe_unused]] void *user_data) {
 
-        auto usb = reinterpret_cast<hot_unplug_data_t*>(user_data);
+        auto usb = reinterpret_cast<detail::hot_unplug_data_t*>(user_data);
 
         usb->close_device();
 
@@ -134,37 +146,41 @@ namespace usb {
         }
 
         if (libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG) == 0) {
-            libusb_exit (nullptr);
-            return status_t::FAIL;
+            m_hot_plug_capable = false;
+        } else {
+            m_hot_plug_capable = true;
         }
 
-        auto hot_plug_data = new hot_plug_data_t();
-        hot_plug_data->open_device = [this](libusb_device* dev) {
+        m_hot_plug_data = std::make_unique<detail::hot_plug_data_t>();
+        m_hot_plug_data->open_device = [this](libusb_device* dev) {
             return this->open_device(dev);
         };
 
-        hot_plug_data->on_hotplug = &this->m_on_hotplug;
+        m_hot_plug_data->on_hotplug = &this->m_on_hotplug;
 
-        auto hot_unplug_data = new hot_unplug_data_t();
-        hot_unplug_data->close_device = [this]() {
+        m_hot_unplug_data = std::make_unique<detail::hot_unplug_data_t>();
+        m_hot_unplug_data->close_device = [this]() {
             this->close_device();
         };
 
-        hot_unplug_data->on_hotunplug = &this->m_on_hotunplug;
+        m_hot_unplug_data->on_hotunplug = &this->m_on_hotunplug;
+
+        if (!m_hot_plug_capable) {
+            this->open_device();
+            return status_t::SUCCESS;
+        }
 
         rc = libusb_hotplug_register_callback (nullptr, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0, m_settings.vid,
-            m_settings.pid, class_id, hotplug_callback, hot_plug_data, nullptr);
+            m_settings.pid, class_id, hotplug_callback, &*m_hot_plug_data, nullptr);
         if (LIBUSB_SUCCESS != rc) {
             libusb_exit (nullptr);
-            delete hot_plug_data;
             return status_t::FAIL;
         }
 
         rc = libusb_hotplug_register_callback (nullptr, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, m_settings.vid,
-            m_settings.pid,class_id, hotunplug_callback, hot_unplug_data, nullptr);
+            m_settings.pid,class_id, hotunplug_callback, &*m_hot_unplug_data, nullptr);
         if (LIBUSB_SUCCESS != rc) {
             libusb_exit (nullptr);
-            delete hot_unplug_data;
             return status_t::FAIL;
         }
 
@@ -253,17 +269,26 @@ namespace usb {
     [[nodiscard]] constexpr UsbBulk<DATA_SIZE>::tx_transfer_data_t UsbBulk<DATA_SIZE>::make_tx_data() noexcept {
         return tx_transfer_data_t{};
     }
+
     UsbBulk_template_t
     [[nodiscard]] constexpr UsbBulk<DATA_SIZE>::rx_transfer_data_t UsbBulk<DATA_SIZE>::make_rx_data() noexcept {
         return rx_transfer_data_t{};
     }
 
-    // UsbBulk_template_t
-    // [[nodiscard]] std::function<UsbBulk<DATA_SIZE>::tx_transfer_data_t(void)> UsbBulk<DATA_SIZE>::tx_data_maker() noexcept {
-    //     return [this]() {
-    //         return make_tx_data();
-    //     };
-    // }
+    UsbBulk_template_t
+    [[nodiscard]] bool UsbBulk<DATA_SIZE>::hot_plug_capable() const noexcept {
+        return m_hot_plug_capable;
+    }
+    UsbBulk_template_t
+    void UsbBulk<DATA_SIZE>::call_internal_hotplug_callback() noexcept {
+        hotplug_callback(NULL, NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, &*m_hot_plug_data);
+    }
+
+    UsbBulk_template_t
+    void UsbBulk<DATA_SIZE>::call_internal_hotunplug_callback() noexcept {
+        hotunplug_callback(NULL, NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, &*m_hot_unplug_data);
+    }
+
 }
 
 #endif //USB_BULK_HPP
