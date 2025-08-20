@@ -72,8 +72,8 @@ namespace device {
         void on_script(mhood_t<sig_send_script>) noexcept;
         void on_gpio_set(mhood_t<sig_gpio_set>) noexcept;
 
-        f_log_t         m_logger;
         so_5::mbox_t    m_board;
+        f_log_t         m_logger;
         bool            m_conected {false};
         proto::status_t m_status;
         std::array<gpio_state_t, s_gpio_count> m_gpio_states;

@@ -45,6 +45,8 @@ add_executable(usb_io main.cpp
         usb/usb-v2.hpp
         usb/bulk-transfer.hpp
         usb/usb-bulk-agent.hpp
+        gui/guiv2.cpp
+        gui/guiv2.hpp
 )
 
 target_link_libraries(usb_io taywee::args ftxui::ftxui sobjectizer::StaticLib libusb::libusb)
