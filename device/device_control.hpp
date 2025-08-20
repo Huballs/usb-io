@@ -177,6 +177,8 @@ namespace device {
 
         size_t start = 0U;
 
+        using namespace std;
+
         while (start < script.size()) {
             DATA_T data;
 

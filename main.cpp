@@ -12,6 +12,8 @@
 #include "usb/usb-bulk.hpp"
 #include "usb/usb-bulk-agent.hpp"
 #include "gui/logger.hpp"
+#include "clock.hpp"
+#include "gui/guiv2.hpp"
 
 namespace {
 
@@ -171,6 +173,21 @@ int main(const int argc, char *argv[3]) {
     //         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     //     }
     // });
+
+    auto gui_thread = std::jthread([&]() {
+        //gui::run(device_ctrl, s_exit);
+            Counter<uint64_t> counter(500ms);
+            static uint64_t last_count = 0;
+            while (1) {
+                if (last_count != counter.cnt()) {
+                    std::cout << counter.cnt() << std::endl;
+                    last_count = counter.cnt();
+                }
+            };
+    });
+
+    gui_thread.detach();
+
     so_5::launch([&usb_bulk](so_5::environment_t & env) {
           auto board = env.create_mbox();
           env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 4U).binder(),
@@ -181,13 +198,10 @@ int main(const int argc, char *argv[3]) {
              });
        });
 
-        auto gui_thread = std::jthread([&]() {
-            //gui::run(device_ctrl, s_exit);
-                while (1){};
-        });
+
 
         //usb_thread.detach();
-        gui_thread.join();
+        //gui_thread.join();
         // device_ctrl.set_gpio(1, device::gpio_state_t{});
         // device_ctrl.send_data_if_any();
         // while (true) {

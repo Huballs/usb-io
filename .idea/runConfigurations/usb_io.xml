@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="usb_io" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-v 0xCAFE -p 0x4014" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="true" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug-MinGW" RUN_TARGET_PROJECT_NAME="usb_io" RUN_TARGET_NAME="usb_io" EXPLICIT_BUILD_TARGET_NAME="all">
+  <configuration default="false" name="usb_io" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-v 0xCAFE -p 0x4014" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="true" PASS_PARENT_ENVS_2="true" CONFIG_NAME="conan-debug" RUN_TARGET_PROJECT_NAME="usb_io" RUN_TARGET_NAME="usb_io" EXPLICIT_BUILD_TARGET_NAME="all">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>

@@ -45,7 +45,7 @@ namespace gui::detail {
     using namespace ftxui;
 
         Element Logger::OnRender() {
-            ftxui::Render()
+
             if (m_was_changed) {
                 std::lock_guard lk(m_mutex);
                 m_menu_option.entries = m_text;

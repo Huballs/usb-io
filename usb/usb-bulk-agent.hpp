@@ -8,6 +8,7 @@
 #include <iostream>
 #include <so_5/all.hpp>
 #include "usb-bulk.hpp"
+#include "../clock.hpp"
 
 namespace usb {
 
@@ -105,8 +106,9 @@ namespace usb {
 
         void on_timer(mhood_t<loop_signal>) {
             static bool last_has_device  = false;
+            static auto counter = Counter<uint32_t>(1s);
 
-            if (!m_usb_bulk.hot_plug_capable()) {
+            if (!m_usb_bulk.hot_plug_capable() && counter.cnt()) {
 
                 if (!m_usb_bulk.has_device()) {
                     m_usb_bulk.open_device();
@@ -120,6 +122,8 @@ namespace usb {
 
                     last_has_device = m_usb_bulk.has_device();
                 }
+
+                counter.reset();
             }
 
             if (!m_usb_bulk.hot_plug_capable() && m_usb_bulk.has_device()) {
