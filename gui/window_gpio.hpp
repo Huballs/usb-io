@@ -22,7 +22,7 @@ namespace gui {
     class WindowGPIO {
     public:
 
-        WindowGPIO(std::function<void(std::string_view)> logger, device::DeviceControl& device_ctrl, Timer& timer);
+        WindowGPIO(std::function<void(std::string_view)> logger, Timer& timer);
 
         Component render();
 
