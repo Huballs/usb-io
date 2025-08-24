@@ -58,6 +58,7 @@ namespace usb {
         using f_on_recieve_t = typename rx_transfer::f_on_recieve_t;
 
         UsbBulk(settings_t settings);
+        ~UsbBulk();
 
         status_t init() noexcept;
 
@@ -133,6 +134,12 @@ namespace usb {
     UsbBulk_template_t
     UsbBulk<DATA_SIZE>::UsbBulk(settings_t settings)
         : m_settings(std::move(settings)) {}
+
+    UsbBulk_template_t
+    UsbBulk<DATA_SIZE>::~UsbBulk() {
+        close_device();
+        libusb_exit(NULL);
+    }
 
     UsbBulk_template_t
     status_t UsbBulk<DATA_SIZE>::init() noexcept {

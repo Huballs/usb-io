@@ -46,15 +46,10 @@ namespace gui::detail {
 
         Element Logger::OnRender() {
 
-            if (m_was_changed) {
-                std::lock_guard lk(m_mutex);
-                m_menu_option.entries = m_text;
-                m_component = Menu(m_menu_option) | Hoverable(&m_is_hovered);
 
-                m_selected = static_cast<int>(m_last_text_size - 1U) == m_selected ? m_text.size() - 1 : m_selected;
+            m_selected = static_cast<int>(m_last_text_size - 1U) == m_selected ? m_text.size() - 1 : m_selected;
 
-                m_last_text_size = m_text.size();
-            }
+            m_last_text_size = m_text.size();
 
             auto element = m_component->Render() | vscroll_indicator  | frame;
 
@@ -97,7 +92,8 @@ namespace gui::detail {
 
             m_text.push_back(std::move(line));
 
-            m_was_changed = true;
+            m_menu_option.entries = m_text;
+            m_component = Menu(m_menu_option) | Hoverable(&m_is_hovered);
 
             UpdateScreen();
         }

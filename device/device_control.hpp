@@ -108,9 +108,23 @@ namespace device {
             );
         }
 
+        template<typename T> // starts from zero
+        constexpr const proto::data_gpio_t* cast_to_data_gpio(const T& array, size_t postition) noexcept {
+            return reinterpret_cast<const proto::data_gpio_t*>(
+                array.data() + sizeof(proto::data_header_t) + sizeof(proto::data_gpio_t) * postition
+            );
+        }
+
         template<typename T>
         constexpr proto::status_t* cast_to_data_status(T& array) noexcept {
             return reinterpret_cast<proto::status_t*>(
+                array.data() + sizeof(proto::data_header_t)
+            );
+        }
+
+        template<typename T>
+        constexpr const proto::status_t* cast_to_data_status(const T& array) noexcept {
+            return reinterpret_cast<const proto::status_t*>(
                 array.data() + sizeof(proto::data_header_t)
             );
         }
@@ -120,13 +134,23 @@ namespace device {
             return array.data() + sizeof(proto::data_header_t);
         }
 
+        template<typename T>
+        constexpr const uint8_t* cast_to_data(const T& array) noexcept {
+            return array.data() + sizeof(proto::data_header_t);
+        }
+
     }
 
     #define DeviceDef(RET)  DeviceTemplate\
                             RET Device<DeviceTemplateParams>::
 
     DeviceDef(void)  so_define_agent() {
-        so_subscribe_self().event(&Device::on_script);
+        so_subscribe(m_board).event(&Device::on_script);
+        so_subscribe(m_board).event(&Device::on_connected);
+        so_subscribe(m_board).event(&Device::on_disconnected);
+        so_subscribe(m_board).event(&Device::on_error);
+        so_subscribe(m_board).event(&Device::on_gpio_set);
+        so_subscribe(m_board).event(&Device::on_recieve);
     }
 
     DeviceDef(void) send(proto::data_gpio_t gpio_data) noexcept {
@@ -138,7 +162,7 @@ namespace device {
         cast_to_data_header(data)->type = proto::data_type_t::GPIO;
         cast_to_data_header(data)->size = 1U;
 
-        cast_to_data_gpio(data, 0U) = gpio_data;
+        *cast_to_data_gpio(data, 0U) = gpio_data;
 
         send(data);
     }
@@ -210,15 +234,19 @@ namespace device {
 
         detail::cast_to_data_header(data)->type = proto::data_type_t::SCRIPT_NAME;
 
+        auto size = min(static_cast<size_t>(name.size()), (size_t)32U);
+
         strncpy(reinterpret_cast<char*>(detail::cast_to_data(data)), name.data()
-            , min(static_cast<size_t>(name.size()), (size_t)32U));
+            , size);
+
+        *(detail::cast_to_data(data) + size) = 0U;
 
         send(data);
     }
 
     DeviceDef(void) on_recieve(mhood_t<usb::sig_recieve_res<DATA_SIZE>> result) noexcept {
 
-        if (result->status() == usb::status_t::SUCCESS) {
+        if (result->status == usb::status_t::SUCCESS) {
 
             auto header = detail::cast_to_data_header(result->data);
 
@@ -233,7 +261,7 @@ namespace device {
                     break;
                 }
                 case proto::data_type_t::TEXT_MESSAGE: {
-                    parse_text_message(result->data());
+                    parse_text_message(result->data);
                 }
                 default: break;
             }
@@ -267,8 +295,8 @@ namespace device {
 
         assert(header->type == proto::data_type_t::GPIO);
 
-        if ((header->size() > s_gpio_count)
-            || (header->size() * sizeof(proto::data_gpio_t) + sizeof(proto::data_header_t)) > DATA_SIZE
+        if ((header->size > s_gpio_count)
+            || (header->size * sizeof(proto::data_gpio_t) + sizeof(proto::data_header_t)) > DATA_SIZE
         ) {
             m_logger("GPIO packet size too big");
             return;
@@ -291,7 +319,7 @@ namespace device {
     }
 
     DeviceDef(void)  parse_text_message(const DATA_T& data) noexcept {
-        auto mess_ptr = detail::cast_to_data(data.data());
+        auto mess_ptr = reinterpret_cast<const char*>(detail::cast_to_data(data));
 
         auto max_size =  DATA_SIZE - sizeof(proto::data_header_t);
 

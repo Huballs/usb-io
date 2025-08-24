@@ -22,7 +22,7 @@
 #include "window_program.hpp"
 #include "window_gpio.hpp"
 #include "window_comm_state.hpp"
-#include "window_conn.hpp"
+#include "conn_status.hpp"
 #include "window_open_file.hpp"
 #include "window_tabs.hpp"
 #include "button.hpp"
@@ -116,9 +116,6 @@ namespace gui {
         close_button->on_enter([&]() {
             window_open_file.close();
         });
-
-        //auto back_button = WindowOpenFileBackButton::make(window_open_file);
-        //auto close_button = WindowOpenFileClose::make(window_open_file);
 
         auto title = WindowOpenFileTitle::make(window_open_file);
 

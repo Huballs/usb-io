@@ -40,7 +40,7 @@ namespace gui {
                 res.push_back((item->name()));
             }
 
-            auto m = Menu(res, &m_selected);
+            auto m = ftxui::Menu(res, &m_selected);
             m |= Hoverable(&m_hover);
             return m;
         }

@@ -27,7 +27,7 @@ namespace {
 
     static std::atomic_bool s_exit{false};
 
-    // device::DeviceControl* s_device;
+    so_5::environment_t* s_env;
 
     void signal_handler ([[maybe_unused]] int sig) {
         std::cout << "Received signal ";
@@ -43,9 +43,9 @@ namespace {
         s_exit.store(true);
         s_exit.notify_one();
 
-        // if (s_device && !s_device->has_device()) {
-        //     std::exit(0);
-        // }
+        if (s_env) {
+            s_env->stop();
+        }
     };
 
     struct arguments_t {
@@ -174,31 +174,64 @@ int main(const int argc, char *argv[3]) {
     //     }
     // });
 
-    auto gui_thread = std::jthread([&]() {
-        //gui::run(device_ctrl, s_exit);
-            Counter<uint64_t> counter(500ms);
-            static uint64_t last_count = 0;
-            while (1) {
-                if (last_count != counter.cnt()) {
-                    std::cout << counter.cnt() << std::endl;
-                    last_count = counter.cnt();
-                }
-            };
-    });
+    // auto gui_thread = std::jthread([&]() {
+    //     //gui::run(device_ctrl, s_exit);
+    //         Counter<uint64_t> counter(500ms);
+    //         static uint64_t last_count = 0;
+    //         while (1) {
+    //             if (last_count != counter.cnt()) {
+    //                 //std::cout << counter.cnt() << std::endl;
+    //                 last_count = counter.cnt();
+    //             }
+    //         };
+    // });
 
-    gui_thread.detach();
+    //gui_thread.detach();
 
-    so_5::launch([&usb_bulk](so_5::environment_t & env) {
-          auto board = env.create_mbox();
-          env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 4U).binder(),
-              [board, &usb_bulk](so_5::coop_t & coop) mutable {
+    so_5::mbox_t mbox;
 
-                coop.make_agent<usb_agent_t>(board, usb_bulk);
-                coop.make_agent<device_t>(board, gui::log);
-             });
-       });
+    so_5::wrapped_env_t sobj([&](so_5::environment_t & env) {
 
+            mbox = env.create_mbox();
+            // Create a coop with main agent inside.
+            env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 4U).binder(),
+                [&](so_5::coop_t & coop) mutable {
+                    // mbox = env.create_mbox();
+                //mbox = coop.make_agent<main_agent>(...)->so_direct_mbox();
+                    coop.make_agent<usb_agent_t>(mbox, usb_bulk);
+                    coop.make_agent<device_t>(mbox, gui::log);
+                    //coop.make_agent<gui::Gui>(mbox, coop, [](){signal_handler(1);});
+                    s_env = &env;
+            });
 
+        env.introduce_coop(
+            [&](so_5::coop_t & coop) mutable {
+
+            //mbox = coop.make_agent<main_agent>(...)->so_direct_mbox();
+                coop.make_agent<gui::Gui>(mbox, coop, [](){signal_handler(1);});
+        });
+        }/*,
+    //     [](so_5::environment_params_t & params) {
+    //         // All SObjectizer-related activities will be performed
+    //         // on the context of the single worker thread.
+    //         params.infrastructure_factory(
+    //             so_5::env_infrastructures::simple_mtsafe::factory());
+    //     }*/);
+
+    sobj.join();
+
+    // so_5::launch([&usb_bulk](so_5::environment_t & env) {
+    //       auto board = env.create_mbox();
+    //       env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 4U).binder(),
+    //           [board, &usb_bulk, &env](so_5::coop_t & coop) mutable {
+    //
+    //             coop.make_agent<usb_agent_t>(board, usb_bulk);
+    //             coop.make_agent<device_t>(board, gui::log);
+    //               /*auto a = */coop.make_agent<gui::Gui>(board);
+    //               //a->make_agents(coop);
+    //               s_env = &env;
+    //          });
+    //    });
 
         //usb_thread.detach();
         //gui_thread.join();

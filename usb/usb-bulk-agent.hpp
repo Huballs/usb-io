@@ -30,8 +30,8 @@ namespace usb {
         typename UsbBulk<DATA_SIZE>::rx_transfer_data_t data;
     };
 
-    struct sig_hotplug{};
-    struct sig_hotunplug{};
+    struct sig_hotplug : public so_5::signal_t {};
+    struct sig_hotunplug : public so_5::signal_t {};
     struct sig_error_mes {usb_error_t error;};
     struct sig_transmit_res {status_t status;};
 
@@ -66,13 +66,16 @@ namespace usb {
                 so_5::send<sig_hotplug>(m_board);
             }
 
-            if (is_init)
-                m_timer_loop = so_5::send_periodic<loop_signal>(*this, 0ms, 5ms);
+            if (is_init) {
+                m_usb_loop_thread = std::jthread([this](){usb_loop();});
+                m_usb_loop_thread.detach();
+            }
+                //m_timer_loop = so_5::send_periodic<loop_signal>(*this, 10ms, 5ms);
         }
 
         void so_define_agent() override {
             so_subscribe_self().event(&UsbBulkAgent::on_timer);
-            so_subscribe_self().event(&UsbBulkAgent::on_transmit_data);
+            so_subscribe(m_board).event(&UsbBulkAgent::on_transmit_data);
         }
 
         status_t transmit(typename usb_bulk_t::tx_transfer_data_t data) {
@@ -83,6 +86,7 @@ namespace usb {
         const so_5::mbox_t m_board;
         usb_bulk_t& m_usb_bulk;
         so_5::timer_id_t m_timer_loop;
+        std::jthread m_usb_loop_thread;
 
         typename usb_bulk_t::f_on_transmit_t m_f_on_transmit = [this](status_t res) {
             so_5::send<sig_transmit_res>(m_board, res);
@@ -96,6 +100,7 @@ namespace usb {
 
         f_hotplug_t m_f_on_hotplug = [this]() {
             so_5::send<sig_hotplug>(m_board);
+            m_usb_bulk.recieve(m_f_on_recieve);
         };
 
         f_hotplug_t m_f_on_hotunplug = [this]() {
@@ -132,6 +137,38 @@ namespace usb {
                 m_usb_bulk.loop();
             }
 
+        }
+
+        void usb_loop() {
+            static bool last_has_device  = false;
+            static auto counter = Counter<uint32_t>(1s);
+
+            while (1) {
+                if (!m_usb_bulk.hot_plug_capable() && counter.cnt()) {
+
+                    if (!m_usb_bulk.has_device()) {
+                        m_usb_bulk.open_device();
+                    }
+
+                    if (m_usb_bulk.has_device() != last_has_device) {
+                        if (m_usb_bulk.has_device())
+                            m_usb_bulk.call_internal_hotplug_callback();
+                        else
+                            m_usb_bulk.call_internal_hotunplug_callback();
+
+                        last_has_device = m_usb_bulk.has_device();
+                    }
+
+                    counter.reset();
+                }
+
+                if (!m_usb_bulk.hot_plug_capable() && m_usb_bulk.has_device()) {
+                    m_usb_bulk.loop();
+                } else if (m_usb_bulk.hot_plug_capable()) {
+                    m_usb_bulk.loop();
+                }
+                std::this_thread::sleep_for(10ms);
+            }
         }
 
         void on_transmit_data(mhood_t<sig_transmit_data<DATA_SIZE>> s) {

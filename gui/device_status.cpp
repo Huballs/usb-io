@@ -12,9 +12,9 @@
 namespace gui {
     using namespace ftxui;
 
-    Color lua_status_colour(device::lua_status_t status) {
+    Color lua_status_colour(device::proto::lua_status_t status) {
 
-        using s = device::lua_status_t;
+        using s = device::proto::lua_status_t;
 
         switch (status) {
             case s::RUNNING: return Color::Blue; break;
@@ -28,9 +28,9 @@ namespace gui {
         }
     }
 
-    std::string lua_status_text(device::lua_status_t status) {
+    std::string lua_status_text(device::proto::lua_status_t status) {
 
-        using s = device::lua_status_t;
+        using s = device::proto::lua_status_t;
 
         switch (status) {
             case s::RUNNING:        return "Running     "; break;
@@ -44,58 +44,58 @@ namespace gui {
         }
     }
 
-    static bool check_status(device::status_t& current_status) {
-        static device::lua_status_t last_lua_status{};
-        static bool last_script_loaded = false;
-        static std::string last_name{};
+    // static bool check_status(device::proto::status_t& current_status) {
+    //     static device::lua_status_t last_lua_status{};
+    //     static bool last_script_loaded = false;
+    //     static std::string last_name{};
+    //
+    //     bool ret = false;
+    //
+    //     if ((current_status.lua_status != last_lua_status)) {
+    //         last_lua_status = current_status.lua_status;
+    //         ret = true;
+    //     }
+    //
+    //     if (strnlen((const char*)current_status.script_name, 32U) == 32U) {
+    //         strncpy(current_status.script_name, "Name Too Big", 32U);
+    //         return true;
+    //     }
+    //     std::string new_name{current_status.script_name};
+    //
+    //     if (new_name != last_name) {
+    //         last_name = new_name;
+    //         ret = true;
+    //     }
+    //
+    //     if (last_script_loaded != current_status.script_loaded) {
+    //         last_script_loaded = current_status.script_loaded;
+    //         ret = true;
+    //     }
+    //
+    //     return ret;
+    // }
 
-        bool ret = false;
-
-        if ((current_status.lua_status != last_lua_status)) {
-            last_lua_status = current_status.lua_status;
-            ret = true;
-        }
-
-        if (strnlen((const char*)current_status.script_name, 32U) == 32U) {
-            strncpy(current_status.script_name, "Name Too Big", 32U);
-            return true;
-        }
-        std::string new_name{current_status.script_name};
-
-        if (new_name != last_name) {
-            last_name = new_name;
-            ret = true;
-        }
-
-        if (last_script_loaded != current_status.script_loaded) {
-            last_script_loaded = current_status.script_loaded;
-            ret = true;
-        }
-
-        return ret;
-    }
-
-    DeviceStatus::DeviceStatus(device::DeviceControl& device) : m_device(device) {
-        make_element(m_device.status());
+    DeviceStatus::DeviceStatus() {
+        make_element(device::proto::status_t{});
     }
 
     Element DeviceStatus::OnRender() {
-
-        auto status = m_device.status();
-
-        if (check_status(status)) {
-            make_element(status);
-        }
-
         return m_element;
     }
 
+    std::string parse_name(const char* name) noexcept {
+        if (strnlen(name, 32U) == 32U) {
+            return std::string{"Name Too Big"};
+        }
 
-    void DeviceStatus::make_element(const device::status_t& current_status) {
+        return std::string{name};
+    }
+
+    void DeviceStatus::make_element(const device::proto::status_t& current_status) noexcept {
 
         Decorator status_colour = color(lua_status_colour(current_status.lua_status));
         Decorator script_colour{};
-        std::string script_name{current_status.script_name};
+        std::string script_name = parse_name(current_status.script_name);
 
         if (script_name.empty() || !current_status.script_loaded) {
             script_name = "None";

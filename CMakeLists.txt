@@ -22,8 +22,8 @@ add_executable(usb_io main.cpp
         device/device_control.hpp
 #        device/program.hpp
 #        device/program.cpp
-#        gui/window_gpio.cpp
-#        gui/window_gpio.hpp
+        gui/window_gpio.cpp
+        gui/window_gpio.hpp
 #        gui/window_comm_state.hpp
 #        gui/window_conn.hpp
 #        gui/timer.hpp
@@ -31,7 +31,7 @@ add_executable(usb_io main.cpp
 #        gui/window_open_file.hpp
 #        gui/window_tabs.hpp
 #        gui/window_tabs.cpp
-#        gui/button.hpp
+
 #        gui/menu.hpp
 #        device/proto.hpp
 #        gui/device_status.hpp
@@ -48,6 +48,12 @@ add_executable(usb_io main.cpp
         gui/guiv2.cpp
         gui/guiv2.hpp
         clock.hpp
+        gui/window_tabs.cpp
+        gui/window_open_file.hpp
+        gui/button.cpp
+        gui/button.hpp
+        gui/conn_status.hpp
+        gui/device_status.cpp
 )
 
 target_link_libraries(usb_io taywee::args ftxui::ftxui sobjectizer::StaticLib libusb::libusb)

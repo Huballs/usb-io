@@ -174,7 +174,8 @@ private:
     }
 };
 
-WindowTabs::WindowTabs(device::DeviceControl& device) : m_device(device) {
+WindowTabs::WindowTabs(std::function<void(std::string_view, std::string_view)> f_send_script)
+    : m_f_send_script(f_send_script){
     build_component();
 }
 
@@ -205,7 +206,7 @@ void WindowTabs::add_programm_tab(const std::string& tab_name, fs::ItemConst fs_
     };
 
     auto send_script = [this, fs_item](std::string_view text) {
-        m_device.send_script(fs_item->name(), text);
+        m_f_send_script(fs_item->name(), text);
     };
 
     auto content = std::make_shared<TabProgramm>(fs_item, m_tabs_names.size(), close_tab, send_script);

@@ -19,7 +19,9 @@ namespace gui {
     class WindowTabs : public ComponentBase {
     public:
 
-        WindowTabs(device::DeviceControl& device);
+        using f_send_script_t = std::function<void(std::string_view, std::string_view)>;
+
+        WindowTabs(f_send_script_t f_send_script);
 
         Element OnRender() override;
         //
@@ -39,8 +41,8 @@ namespace gui {
             return m_final_component->Focused();
         }
 
-        static Component make(device::DeviceControl& device) noexcept {
-            return Make<WindowTabs>(device);
+        static Component make(f_send_script_t f) noexcept {
+            return Make<WindowTabs>(f);
         }
 
     private:
@@ -58,7 +60,7 @@ namespace gui {
 
         Element m_final_element;
 
-        device::DeviceControl& m_device;
+        std::function<void(std::string_view, std::string_view)> m_f_send_script;
 
         void make_tabs_menu() noexcept;
         void make_tabs() noexcept ;

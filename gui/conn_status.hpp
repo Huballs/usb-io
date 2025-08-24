@@ -15,43 +15,35 @@ namespace gui {
 
     using namespace ftxui;
 
-    class WindowConn : public ComponentBase {
+    class ConnStatus : public ComponentBase {
     public:
 
-        WindowConn(device::DeviceControl& device) : m_device(device) {
-            make_element();
+        ConnStatus() {
+            make_element(false);
         };
 
         Element OnRender() override {
-            if (m_device.has_device() != m_prev_status) {
-                make_element();
-                m_prev_status = m_device.has_device();
-            }
-
             return m_element;
         }
 
-        static Component make(device::DeviceControl& device) {
-            return Make<WindowConn>(device);
+        static Component make() {
+            return Make<ConnStatus>();
         }
-    private:
 
-        void make_element() {
-            if (m_device.has_device()) {
+        void make_element(bool connected) {
+            if (connected) {
                 m_element = text(m_name_connected) | color(Color::Green);
             } else {
                 m_element = text(m_name_not_connected) | color(Color::Red);
             }
         }
 
+    private:
         const std::string m_name_connected    {"Connected    "};
         const std::string m_name_not_connected{"Not Connected"};
 
         Element m_element;
 
-        bool m_prev_status = false;
-
-        device::DeviceControl& m_device;
     };
 }
 #endif //WINDOW_CONN_HPP
