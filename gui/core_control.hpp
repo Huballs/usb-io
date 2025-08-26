@@ -4,24 +4,32 @@
 
 #ifndef CORE_CONTROL_HPP
 #define CORE_CONTROL_HPP
+#include "button.hpp"
+#include "logger.hpp"
+#include "../device/device_control.hpp"
+#include "ftxui/component/component_base.hpp"
 
 namespace gui {
-#include "logger.hpp"
-#include "ftxui/component/component_base.hpp"
-#include "../device/device_control.hpp"
 
-using namespace ftxui;
+    using namespace ftxui;
 
-class CoreControl : public ComponentBase {
-public:
-    CoreControl(device::DeviceControl& device);
-private:
+    class CoreControl : public so_5::agent_t {
+    public:
+        CoreControl(context_t ctx, so_5::mbox_t board, Component& this_component);
 
-    void make_component();
+        void so_define_agent() override;
+    private:
 
-    device::DeviceControl& m_device;
-    device::status_t m_last_status;
-};
+        void make_component() noexcept;
+
+        so_5::mbox_t m_board;
+        Component m_component;
+
+        std::shared_ptr<Button> m_button_launch;
+        std::shared_ptr<Button> m_button_stop;
+        std::shared_ptr<Button> m_button_pause;
+        std::shared_ptr<Button> m_button_continue;
+    };
 
 }
 

@@ -14,13 +14,15 @@ namespace gui {
 
     Element Button::OnRender() {
         Decorator colour = m_disabled ? color(m_disabled_colour) : color(m_colour);
-        return m_renderer->Render() | colour;
+        return ComponentBase::OnRender() | colour;
     }
 
     bool Button::OnEvent(Event ev) {
 
+        bool ret = ComponentBase::OnEvent(ev);
+
         if (m_disabled) {
-            return true;
+            return false;
         }
 
         if (m_is_hover) {
@@ -30,7 +32,7 @@ namespace gui {
         if ((IS_MOUSE_CLICK(ev) && m_is_hover) || (ev == Event::Return)) {
             m_f_on_enter();
         }
-        return m_renderer->OnEvent(ev);
+        return ret;
     }
 
     bool Button::Focusable() const {
@@ -69,7 +71,7 @@ namespace gui {
     }
 
     void Button::make_renderer() noexcept {
-        m_element = bold(ftxui::text(m_text));
+        m_element = center(bold(ftxui::text(m_text)));
 
         m_renderer = Renderer([this]() {
 

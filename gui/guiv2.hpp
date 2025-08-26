@@ -54,12 +54,12 @@ namespace gui {
         fs::Fs m_fs {s_open_file_parent_folder};
 
         Component m_menu;
-        Component m_logger;
         Component m_gpio;
         Component m_modal_open_file;
+        Component m_core_control;
         Component m_render;
 
-
+        std::shared_ptr<detail::Logger> m_logger;
         std::shared_ptr<WindowTabs> m_tabs;
         std::shared_ptr<ConnStatus> m_conn_status;
         std::shared_ptr<DeviceStatus> m_device_status;
@@ -76,6 +76,7 @@ namespace gui {
         void on_status(mhood_t<device::sig_status>) noexcept;
         void on_connected(mhood_t<device::sig_connected>) noexcept;
         void on_disconnected(mhood_t<device::sig_disconnected>) noexcept;
+        void on_message(mhood_t<device::sig_message>) noexcept;
 
         Component make_menu() noexcept;
         Component make_logger() noexcept;

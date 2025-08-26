@@ -3,6 +3,7 @@
 //
 
 #include "guiv2.hpp"
+#include "core_control.hpp"
 
 namespace gui {
 
@@ -10,7 +11,9 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
         auto update_screen = [this]() {
             m_screen.PostEvent(Event::Custom);
         };
+
         coop.make_agent<WindowGPIO>(m_board, log, m_animation_timer,update_screen, m_gpio);
+        coop.make_agent<CoreControl>(m_board, m_core_control);
     }
 
     void Gui::so_define_agent() {
@@ -23,6 +26,7 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
         so_subscribe(m_board).event(&Gui::on_connected);
         so_subscribe(m_board).event(&Gui::on_disconnected);
         so_subscribe(m_board).event(&Gui::on_status);
+        so_subscribe(m_board).event(&Gui::on_message);
         build_render();
     }
 
@@ -50,12 +54,18 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
 
     void Gui::on_connected(mhood_t<device::sig_connected>) noexcept {
         m_conn_status->make_element(true);
+        m_logger->AddMessage("Device attached");
         m_screen.PostEvent(Event::Custom);
     }
 
     void Gui::on_disconnected(mhood_t<device::sig_disconnected>) noexcept {
         m_conn_status->make_element(false);
+        m_logger->AddMessage("Device dettached");
         m_screen.PostEvent(Event::Custom);
+    }
+
+    void Gui::on_message(mhood_t<device::sig_message> s) noexcept {
+        m_logger->AddMessage(s->text);
     }
 
     Component Gui::make_menu() noexcept {
@@ -103,7 +113,7 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
             so_5::send<device::sig_send_script>(m_board, name, text);
         };
 
-        m_logger = make_logger();
+        m_logger = std::make_shared<detail::Logger>();
         m_tabs = std::make_shared<WindowTabs>(send_script);
         m_modal_open_file = make_open_file(m_tabs);
         m_menu = make_menu();
@@ -119,12 +129,17 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
         return hbox(separatorEmpty(), separator() | color(Color::GrayLight), separatorEmpty()); \
         })
 
-        auto layout = Container::Vertical({
+        auto left_layout = Container::Vertical({
             Container::Horizontal({m_menu, sep, m_conn_status, sep, m_device_status, sep})
             , ResizableSplitTop(
             m_tabs | flex_grow
                     , bottom | xflex_grow, &split_size)
         } ) | flex_grow;
+
+        auto layout = Container::Horizontal({
+            left_layout
+            , m_core_control
+        });
 
         layout |= Modal(m_modal_open_file, &m_show_modal_open_file);
 

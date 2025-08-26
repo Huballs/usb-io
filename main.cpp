@@ -199,7 +199,7 @@ int main(const int argc, char *argv[3]) {
                     // mbox = env.create_mbox();
                 //mbox = coop.make_agent<main_agent>(...)->so_direct_mbox();
                     coop.make_agent<usb_agent_t>(mbox, usb_bulk);
-                    coop.make_agent<device_t>(mbox, gui::log);
+                    coop.make_agent<device_t>(mbox);
                     //coop.make_agent<gui::Gui>(mbox, coop, [](){signal_handler(1);});
                     s_env = &env;
             });

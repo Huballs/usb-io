@@ -23,10 +23,9 @@ namespace device::proto {
         NONE
         , GET_ALL_GPIO
         , LAUNCH_LUA_CORE
-        , SCRIPT_START
-        , SCRIPT_STOP
-        , SCRIPT_PAUSE
-        , SCRIPT_CONTINUE
+        , STOP_LUA_CORE
+        , PAUSE_LUA_CORE
+        , CONTINUE_LUA_CORE
     };
 
     enum class lua_status_t : uint8_t {

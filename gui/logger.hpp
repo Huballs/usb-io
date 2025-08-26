@@ -22,17 +22,20 @@ namespace gui::detail {
 
     class Logger : public ComponentBase {
 
+    public:
+        Logger();
+
         Element OnRender() override;
         bool OnEvent(Event event) override;
 
-        static void UpdateScreen();
-
-    public:
         static Component make();
 
         static void AddMessage(std::string_view mess);
 
         static void SetScreen(ScreenInteractive* screen);
+
+    private:
+        static void UpdateScreen();
     };
 }
 

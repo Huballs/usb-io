@@ -44,12 +44,14 @@ namespace gui::detail {
 
     using namespace ftxui;
 
+        Logger::Logger() {
+            m_menu_option.direction = Direction::Down;
+            m_menu_option.selected = &m_selected;
+
+            AddMessage("Start");
+        }
+
         Element Logger::OnRender() {
-
-
-            m_selected = static_cast<int>(m_last_text_size - 1U) == m_selected ? m_text.size() - 1 : m_selected;
-
-            m_last_text_size = m_text.size();
 
             auto element = m_component->Render() | vscroll_indicator  | frame;
 
@@ -58,15 +60,7 @@ namespace gui::detail {
         }
 
         bool Logger::OnEvent(Event event) {
-            //if (m_is_hovered) {
-                // if (event.is_mouse() && (event.mouse().button == Mouse::WheelDown)) {
-                //     if (m_selected > 0) m_selected--;
-                // } else if (event.is_mouse() && (event.mouse().button == Mouse::WheelUp)) {
-                //     if (m_selected < (m_text.size() - 1U)) m_selected++;
-                //}
-            //}
-                return m_component->OnEvent(event);
-            //return false;
+            return m_component->OnEvent(event);
         }
 
         Component Logger::make() {
@@ -81,8 +75,6 @@ namespace gui::detail {
 
         void Logger::AddMessage(std::string_view mess) {
 
-            std::lock_guard lk(m_mutex);
-
             if (m_text.size() > 50U) {
                 m_text.erase(m_text.begin());
             }
@@ -90,10 +82,14 @@ namespace gui::detail {
             auto line = get_current_time();
             line += mess;
 
+            auto text_size_prev = m_text.size();
+
             m_text.push_back(std::move(line));
 
             m_menu_option.entries = m_text;
             m_component = Menu(m_menu_option) | Hoverable(&m_is_hovered);
+
+            m_selected = (m_selected == (text_size_prev - 1U)) ? m_text.size() - 1U : m_selected;
 
             UpdateScreen();
         }

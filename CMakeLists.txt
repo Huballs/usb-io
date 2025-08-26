@@ -54,6 +54,8 @@ add_executable(usb_io main.cpp
         gui/button.hpp
         gui/conn_status.hpp
         gui/device_status.cpp
+        gui/core_control.hpp
+        gui/core_control.cpp
 )
 
 target_link_libraries(usb_io taywee::args ftxui::ftxui sobjectizer::StaticLib libusb::libusb)

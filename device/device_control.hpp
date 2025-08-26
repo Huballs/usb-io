@@ -25,12 +25,21 @@ namespace device {
         }
     };
 
+    enum class command_t {
+        LAUNCH_LUA_CORE
+        , STOP_LUA_CORE
+        , PAUSE_LUA_CORE
+        , CONTINUE_LUA_CORE
+    };
+
     struct sig_connected{};
     struct sig_disconnected{};
     struct sig_status{proto::status_t status;};
     struct sig_gpio_set{size_t n; gpio_state_t state;};
     struct sig_gpio_new_state{size_t n; gpio_state_t state;};
     struct sig_send_script{std::string_view name; std::string_view script;};
+    struct sig_message{std::string text;};
+    struct sig_command{command_t command;};
 
     using f_log_t = std::function<void(std::string_view)>;
 
@@ -41,10 +50,9 @@ namespace device {
     class Device final : public so_5::agent_t {
 
     public:
-        Device(context_t ctx, so_5::mbox_t board, f_log_t logger)
+        Device(context_t ctx, so_5::mbox_t board)
            :  so_5::agent_t{std::move(ctx)}
             ,  m_board{std::move(board)}
-            , m_logger(logger)
         {}
 
         void            set_gpio(size_t n, gpio_state_t state) noexcept;
@@ -72,8 +80,9 @@ namespace device {
         void on_script(mhood_t<sig_send_script>) noexcept;
         void on_gpio_set(mhood_t<sig_gpio_set>) noexcept;
 
+        void on_command(mhood_t<sig_command>) noexcept;
+
         so_5::mbox_t    m_board;
-        f_log_t         m_logger;
         bool            m_conected {false};
         proto::status_t m_status;
         std::array<gpio_state_t, s_gpio_count> m_gpio_states;
@@ -130,6 +139,13 @@ namespace device {
         }
 
         template<typename T>
+        constexpr proto::command_t* cast_to_command(T& array) noexcept {
+            return reinterpret_cast<proto::command_t*>(
+                array.data() + sizeof(proto::data_header_t)
+            );
+        }
+
+        template<typename T>
         constexpr uint8_t* cast_to_data(T& array) noexcept {
             return array.data() + sizeof(proto::data_header_t);
         }
@@ -151,6 +167,7 @@ namespace device {
         so_subscribe(m_board).event(&Device::on_error);
         so_subscribe(m_board).event(&Device::on_gpio_set);
         so_subscribe(m_board).event(&Device::on_recieve);
+        so_subscribe(m_board).event(&Device::on_command);
     }
 
     DeviceDef(void) send(proto::data_gpio_t gpio_data) noexcept {
@@ -269,23 +286,26 @@ namespace device {
     }
 
     DeviceDef(void) on_error(mhood_t<usb::sig_error_mes> res) noexcept {
+
+        std::string mess;
+
         switch (res->error) {
-            case usb::usb_error_t::INIT: m_logger("Usb Init Error"); break;
-            case usb::usb_error_t::TRANSMIT: m_logger("Usb Transmit Error"); break;
-            default: m_logger("Usb Unknown error");
+            case usb::usb_error_t::INIT: mess = ("Usb Init Error"); break;
+            case usb::usb_error_t::TRANSMIT: mess = ("Usb Transmit Error"); break;
+            default: mess = ("Usb Unknown error");
         }
+
+        so_5::send<sig_message>(m_board, mess);
     }
 
     DeviceDef(void) on_connected(mhood_t<usb::sig_hotplug>) noexcept {
         m_conected = true;
-        m_logger("Device attached");
         so_5::send<sig_connected>(m_board);
         request_gpio();
     }
 
     DeviceDef(void) on_disconnected(mhood_t<usb::sig_hotunplug>) noexcept {
         m_conected = false;
-        m_logger("Device dettached");
         so_5::send<sig_disconnected>(m_board);
     }
 
@@ -298,7 +318,7 @@ namespace device {
         if ((header->size > s_gpio_count)
             || (header->size * sizeof(proto::data_gpio_t) + sizeof(proto::data_header_t)) > DATA_SIZE
         ) {
-            m_logger("GPIO packet size too big");
+            so_5::send<sig_message>(m_board, "GPIO packet size too big");
             return;
         }
 
@@ -308,7 +328,7 @@ namespace device {
             auto [n, gpio_state] = detail::gpio_data_to_state(*gpio_data);
 
             if (n >= m_gpio_states.size()) {
-                m_logger("GPIO incorrect N");
+                so_5::send<sig_message>(m_board, "GPIO incorrect N");
                 continue;
             }
 
@@ -326,9 +346,9 @@ namespace device {
         auto size = strnlen(mess_ptr, max_size);
 
         if ((size == max_size) || (size == 0U)) {
-            m_logger("Recieved a text message that's too big");
+            so_5::send<sig_message>(m_board, "Recieved a text message that's too big");
         } else {
-            m_logger(mess_ptr);
+            so_5::send<sig_message>(m_board, mess_ptr);
         }
     }
 
@@ -338,6 +358,43 @@ namespace device {
 
     DeviceDef(void) on_gpio_set(mhood_t<sig_gpio_set> s) noexcept {
         set_gpio(s->n, s->state);
+    }
+
+    DeviceDef(void) on_command(mhood_t<sig_command> s) noexcept {
+        DATA_T tx_data;
+
+        detail::cast_to_data_header(tx_data)->type = proto::data_type_t::COMMAND;
+
+        auto command = detail::cast_to_command(tx_data);
+
+        switch (s->command) {
+            case(command_t::LAUNCH_LUA_CORE): {
+                *command = proto::command_t::LAUNCH_LUA_CORE;
+                break;
+            }
+
+            case(command_t::PAUSE_LUA_CORE): {
+                *command = proto::command_t::PAUSE_LUA_CORE;
+                break;
+            }
+
+            case(command_t::STOP_LUA_CORE): {
+                *command = proto::command_t::STOP_LUA_CORE;
+                break;
+            }
+
+            case(command_t::CONTINUE_LUA_CORE): {
+                *command = proto::command_t::CONTINUE_LUA_CORE;
+                break;
+            }
+
+            default: {
+                so_5::send<sig_message>(m_board, "Unknown command");
+                return;
+            }
+        }
+
+        send(tx_data);
     }
 }
 
