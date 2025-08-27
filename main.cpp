@@ -124,7 +124,7 @@ int main(const int argc, char *argv[3]) {
         , .config = CONFIGURATION
         , .interface = INTERFACE_NUMBER
         , .tx_time_out_ms = 2000U
-        , .rx_time_out_ms = 100U
+        , .rx_time_out_ms = 5000U
     };
 
     using usb_t = usb::UsbBulk<BUFFER_TOTAL_SIZE>;
@@ -187,6 +187,8 @@ int main(const int argc, char *argv[3]) {
     // });
 
     //gui_thread.detach();
+
+
 
     so_5::mbox_t mbox;
 
