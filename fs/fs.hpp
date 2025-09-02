@@ -64,7 +64,7 @@ public:
     }
 
     void write_file(std::string_view text) const {
-        std::fstream file(m_path);
+        std::fstream file(m_path, std::ios::out | std::ios::trunc);
 
         if (!file.is_open()) {
             throw std::runtime_error("can't open file");

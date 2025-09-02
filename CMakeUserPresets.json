@@ -5,6 +5,6 @@
     },
     "include": [
 
-        "cmake-build-conan-debug-coverage/CMakePresets.json"
+        "cmake-build-debug/CMakePresets.json"
     ]
 }

@@ -167,7 +167,7 @@ namespace usb {
                 } else if (m_usb_bulk.hot_plug_capable()) {
                     m_usb_bulk.loop();
                 }
-                std::this_thread::sleep_for(10ms);
+                std::this_thread::sleep_for(1ms);
             }
         }
 

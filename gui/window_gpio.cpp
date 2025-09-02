@@ -82,7 +82,7 @@ namespace gui {
 
     private:
 
-        std::string m_name{"GPIO"};
+        std::string m_name{" IO"};
         const size_t m_gpio_n;
         std::string m_text;
         Element m_element;

@@ -37,14 +37,14 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
                 m_screen.PostEvent(Event::Custom);
             }
 
-            // m_render_loop->RunOnce();
+            m_render_loop->RunOnce();
 
         }
 
-        // if (m_render_loop->HasQuitted()) {
-        //     m_screen.Exit();
-        //     m_f_on_exit();
-        // }
+        if (m_render_loop->HasQuitted()) {
+            m_screen.Exit();
+            m_f_on_exit();
+        }
     }
 
     void Gui::on_status(mhood_t<device::sig_status> s) noexcept {
@@ -65,6 +65,7 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
     }
 
     void Gui::on_message(mhood_t<device::sig_message> s) noexcept {
+        //std::cout << s->text << std::endl;
         m_logger->AddMessage(s->text);
     }
 

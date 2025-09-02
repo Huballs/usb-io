@@ -107,7 +107,7 @@ namespace gui {
         m_element = hbox(
             text("Lua Status: ")
             , text(lua_status_text(current_status.lua_status)) | status_colour
-            , text(script_name) | script_colour
+            , text(std::string("  ") + script_name) | script_colour
         );
     }
 
