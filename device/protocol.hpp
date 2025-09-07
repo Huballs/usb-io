@@ -6,6 +6,9 @@
 #define PROTO_HPP
 
 namespace device::proto {
+
+    constexpr uint32_t s_var_name_max_size = 16U;
+
     enum class data_type_t : uint8_t {
         NONE
         , GPIO
@@ -17,6 +20,7 @@ namespace device::proto {
         , SCRIPT_DATA_END
         , SCRIPT_NAME
         , STATUS
+        , VARIABLES
     };
 
     enum class command_t : uint8_t {
@@ -41,6 +45,19 @@ namespace device::proto {
     enum class io_t : uint8_t {
         INPUT
         , OUTPUT
+    };
+
+    enum class variable_t : uint8_t {
+        BOOL
+        , INT
+        , FLOAT
+        , STR
+    };
+
+    struct __attribute__((packed))  data_variable_t  {
+        variable_t type;
+        uint32_t size;
+        char name[s_var_name_max_size];
     };
 
 #pragma pack(push,1)

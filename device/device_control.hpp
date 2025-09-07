@@ -40,6 +40,7 @@ namespace device {
     struct sig_send_script{std::string_view name; std::string_view script;};
     struct sig_message{std::string text;};
     struct sig_command{command_t command;};
+    struct sig_variable{std::string name; std::string var;};
 
     using f_log_t = std::function<void(std::string_view)>;
 
@@ -76,6 +77,7 @@ namespace device {
 
         void parse_gpio(const DATA_T& data) noexcept;
         void parse_text_message(const DATA_T& data) noexcept;
+        void parse_variables(const DATA_T& data) noexcept;
 
         void on_script(mhood_t<sig_send_script>) noexcept;
         void on_gpio_set(mhood_t<sig_gpio_set>) noexcept;
@@ -143,6 +145,32 @@ namespace device {
             return reinterpret_cast<proto::command_t*>(
                 array.data() + sizeof(proto::data_header_t)
             );
+        }
+
+        template<typename T>
+        constexpr proto::data_variable_t* cast_to_var_data(T& array, size_t offset) noexcept {
+            return reinterpret_cast<proto::data_variable_t*>(
+                array.data() + sizeof(proto::data_header_t) + offset
+            );
+        }
+
+        template<typename T>
+        constexpr const proto::data_variable_t* cast_to_var_data(const T& array, size_t offset) noexcept {
+            return reinterpret_cast<const proto::data_variable_t*>(
+                array.data() + sizeof(proto::data_header_t) + offset
+            );
+        }
+
+        template<typename T>
+        constexpr uint8_t* cast_to_var(T& array, size_t offset) noexcept {
+            return
+                array.data() + sizeof(proto::data_header_t) + sizeof(proto::data_variable_t) + offset;
+        }
+
+        template<typename T>
+        constexpr const uint8_t* cast_to_var(const T& array, size_t offset) noexcept {
+            return
+                array.data() + sizeof(proto::data_header_t) + sizeof(proto::data_variable_t) + offset;
         }
 
         template<typename T>
@@ -279,6 +307,11 @@ namespace device {
                 }
                 case proto::data_type_t::TEXT_MESSAGE: {
                     parse_text_message(result->data);
+                    break;
+                }
+                case proto::data_type_t::VARIABLES: {
+                    parse_variables(result->data);
+                    break;
                 }
                 default: break;
             }
@@ -349,6 +382,65 @@ namespace device {
             so_5::send<sig_message>(m_board, "Recieved a text message that's too big");
         } else {
             so_5::send<sig_message>(m_board, mess_ptr);
+        }
+    }
+
+    DeviceDef(void) parse_variables(const DATA_T& data) noexcept {
+        auto var_count = detail::cast_to_data_header(data)->size;
+
+        size_t offset = 0U;
+
+        auto max_var_size = [&]() {
+            return data.size() - sizeof(proto::data_header_t) - offset;
+        };
+
+        for (auto _ : std::views::iota(0U, var_count)) {
+            const auto var_data = detail::cast_to_var_data(data, offset);
+
+            auto var_ptr = detail::cast_to_var(data, offset);
+
+            if (var_data->size > max_var_size()) {
+                so_5::send<sig_message>(m_board, "Error in var size");
+                return;
+            }
+
+            const auto name_size = strnlen(var_data->name, proto::s_var_name_max_size);
+
+            if (name_size == proto::s_var_name_max_size) {
+                so_5::send<sig_message>(m_board, "Error in varnamee size");
+                return;
+            }
+
+            switch (var_data->type) {
+                case proto::variable_t::BOOL: {
+                    const bool var = *reinterpret_cast<const bool*>(var_ptr);
+                    so_5::send<sig_variable>(m_board, var_data->name, std::to_string(var));
+                    break;
+                }
+                case proto::variable_t::FLOAT: {
+                    const float var = *reinterpret_cast<const float*>(var_ptr);
+                    so_5::send<sig_variable>(m_board, var_data->name, std::to_string(var));
+                    break;
+                }
+                case proto::variable_t::STR: {
+                    const auto var = reinterpret_cast<const char*>(var_ptr);
+
+                    const auto max_str_size = max_var_size() - sizeof(proto::data_variable_t);
+
+                    auto str_size = strnlen(var, max_str_size);
+
+                    if (str_size == max_str_size) {
+                        so_5::send<sig_message>(m_board, "Error in str var size");
+                        return;
+                    }
+
+                    so_5::send<sig_variable>(m_board, var_data->name, var);
+                    break;
+                }
+                default: so_5::send<sig_message>(m_board, "Unknown var type received");
+            }
+
+            offset += var_data->size;
         }
     }
 
