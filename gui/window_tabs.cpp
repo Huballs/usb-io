@@ -217,6 +217,12 @@ void WindowTabs::add_programm_tab(const std::string& tab_name, fs::ItemConst fs_
     build_component();
 }
 
+void WindowTabs::add_tab(const std::string &tab_name, Component component) {
+    m_tabs_names.push_back(tab_name);
+    m_tabs_contents.push_back(component  | xflex);
+    build_component();
+}
+
 void WindowTabs::make_tabs_menu() noexcept {
     m_final_tabs_menu = Menu(m_tabs_names, &m_selected);
 }

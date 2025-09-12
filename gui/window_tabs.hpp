@@ -33,6 +33,8 @@ namespace gui {
 
         void add_programm_tab(const std::string& tab_name, fs::ItemConst fs_item);
 
+        void add_tab(const std::string& tab_name, Component component);
+
         bool Active() const {
             return m_final_component->Active();
         }

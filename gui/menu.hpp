@@ -30,9 +30,9 @@ namespace gui {
             make_menu();
         }
 
-        // Element OnRender() override {
-        //     return m_component->Render();
-        // }
+        Element OnRender() override {
+            return m_component->Render();
+        }
 
         bool OnEvent(Event ev) override {
 
@@ -40,12 +40,17 @@ namespace gui {
                 this->TakeFocus();
             }
 
-            if(IS_MOUSE_CLICK(ev) && m_is_hover) {
+            bool is_handled = m_component->OnEvent(ev);
+
+            bool pressed = (ev == Event::Return)
+                || (IS_MOUSE_CLICK(ev) && m_is_hover);
+
+            if(pressed) {
                 on_enter();
                 return true;
             }
 
-            return m_component->OnEvent(ev);
+            return is_handled;
         }
 
         bool Focusable() const override {

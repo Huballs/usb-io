@@ -30,6 +30,7 @@ namespace device::proto {
         , STOP_LUA_CORE
         , PAUSE_LUA_CORE
         , CONTINUE_LUA_CORE
+        , GET_STATUS
     };
 
     enum class lua_status_t : uint8_t {

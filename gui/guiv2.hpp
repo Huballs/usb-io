@@ -22,6 +22,7 @@
 #include "button.hpp"
 #include "conn_status.hpp"
 #include "device_status.hpp"
+#include "returns.hpp"
 #include "../device/device_control.hpp"
 
 constexpr std::string_view s_open_file_parent_folder {".."};
@@ -63,6 +64,8 @@ namespace gui {
         std::shared_ptr<WindowTabs> m_tabs;
         std::shared_ptr<ConnStatus> m_conn_status;
         std::shared_ptr<DeviceStatus> m_device_status;
+
+        Component m_tab_returns;
 
         std::unique_ptr<Loop> m_render_loop;
 

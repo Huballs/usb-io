@@ -4,6 +4,7 @@
 
 #include "guiv2.hpp"
 #include "core_control.hpp"
+#include "returns.hpp"
 
 namespace gui {
 
@@ -14,6 +15,9 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
 
         coop.make_agent<WindowGPIO>(m_board, log, m_animation_timer,update_screen, m_gpio);
         coop.make_agent<CoreControl>(m_board, m_core_control);
+        auto return_tab = coop.make_agent<Returns>(m_board, update_screen);
+        Component c{return_tab};
+        m_tab_returns = c;
     }
 
     void Gui::so_define_agent() {
@@ -72,6 +76,8 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
     Component Gui::make_menu() noexcept {
         return Menu::make({
             {"Open", [&](){m_show_modal_open_file = true;}}
+            , {"Request Status", [&]() {so_5::send<device::sig_command>(m_board, device::command_t::GET_STATUS);}}
+            , {"Request GPIO", [&]() {so_5::send<device::sig_command>(m_board, device::command_t::GET_ALL_GPIO);}}
         }
         , MenuOption::Horizontal());
     }
@@ -120,6 +126,8 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
         m_menu = make_menu();
         m_conn_status = std::make_shared<ConnStatus>();
         m_device_status = std::make_shared<DeviceStatus>();
+
+        m_tabs->add_tab("returns", m_tab_returns);
 
         auto bottom = Container::Vertical({
             m_logger  | yflex_shrink

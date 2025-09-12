@@ -30,6 +30,8 @@ namespace device {
         , STOP_LUA_CORE
         , PAUSE_LUA_CORE
         , CONTINUE_LUA_CORE
+        , GET_ALL_GPIO
+        , GET_STATUS
     };
 
     struct sig_connected{};
@@ -397,7 +399,7 @@ namespace device {
         for (auto _ : std::views::iota(0U, var_count)) {
             const auto var_data = detail::cast_to_var_data(data, offset);
 
-            auto var_ptr = detail::cast_to_var(data, offset);
+            auto var_ptr = reinterpret_cast<const uint8_t*>(var_data + 1U);
 
             if (var_data->size > max_var_size()) {
                 so_5::send<sig_message>(m_board, "Error in var size");
@@ -477,6 +479,16 @@ namespace device {
 
             case(command_t::CONTINUE_LUA_CORE): {
                 *command = proto::command_t::CONTINUE_LUA_CORE;
+                break;
+            }
+
+            case command_t::GET_ALL_GPIO: {
+                *command = proto::command_t::GET_ALL_GPIO;
+                break;
+            }
+
+            case command_t::GET_STATUS: {
+                *command = proto::command_t::GET_STATUS;
                 break;
             }
 
