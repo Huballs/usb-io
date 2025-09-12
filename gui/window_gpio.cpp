@@ -187,9 +187,9 @@ namespace gui {
         Component comp;
 
         if (n < device::s_gpio_count / 2U) {
-            comp = m_components_top.at(n)->children_[0U]->children_[0];
+            comp = m_components_top.at(n)->ActiveChild()->ActiveChild();//->children_[0U]->children_[0];
         } else {
-            comp = m_components_bot.at(n - (device::s_gpio_count / 2U))->children_[0U]->children_[0];
+            comp = m_components_bot.at(n - (device::s_gpio_count / 2U))->ActiveChild()->ActiveChild();//->children_[0U]->children_[0];
         }
 
         return reinterpret_cast<GPIOcomponent*>(&*comp);

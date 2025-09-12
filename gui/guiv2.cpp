@@ -78,6 +78,10 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
             {"Open", [&](){m_show_modal_open_file = true;}}
             , {"Request Status", [&]() {so_5::send<device::sig_command>(m_board, device::command_t::GET_STATUS);}}
             , {"Request GPIO", [&]() {so_5::send<device::sig_command>(m_board, device::command_t::GET_ALL_GPIO);}}
+            , {"Exit", [&]() {
+                m_screen.Exit();
+                m_f_on_exit();
+            }}
         }
         , MenuOption::Horizontal());
     }

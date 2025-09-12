@@ -55,13 +55,14 @@ namespace device::proto {
         , STR
     };
 
-    struct __attribute__((packed))  data_variable_t  {
+#pragma pack(push,1)
+    struct /*__attribute__((packed))*/  data_variable_t  {
         variable_t type;
         uint32_t size;
         char name[s_var_name_max_size];
     };
 
-#pragma pack(push,1)
+
     struct /*__attribute__((packed))*/ status_t {
         lua_status_t lua_status = lua_status_t::STOPPED;
         char script_name[32U];
