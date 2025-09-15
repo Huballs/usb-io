@@ -37,11 +37,11 @@ public:
     using contents_t = std::vector<Item>;
 
     std::string name() const noexcept {
-        return m_path.filename();
+        return m_path.filename().string();
     }
 
     std::string path() const noexcept {
-        return m_path;
+        return m_path.string();
     }
 
     item_t type() const noexcept {
