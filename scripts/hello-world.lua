@@ -1,18 +1,9 @@
-gpio.to_out(25)
+gpio.to_out(5)
 
 while 1 do
  
-gpio.write(25, 1)
-sys.post(" pin state", gpio.read(25))
+gpio.write(5, 1)
 
-sys.delay_ms(1)
-
-gpio.write(25, 0)
---sys.post(" pin state", gpio.read(25))
-
-sys.delay_ms(1)
-
---sys.post("one", 1)
---sys.post("two",2)
+gpio.write(5, 0)
 
 end

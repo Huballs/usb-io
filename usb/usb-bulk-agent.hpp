@@ -46,6 +46,10 @@ namespace usb {
             ,  m_board{std::move(board)}
             , m_usb_bulk(usb_bulk) {}
 
+        ~UsbBulkAgent() {
+
+        }
+
         void so_evt_start() override {
 
             bool is_init = true;
@@ -74,7 +78,7 @@ namespace usb {
         }
 
         void so_define_agent() override {
-            so_subscribe_self().event(&UsbBulkAgent::on_timer);
+            // so_subscribe_self().event(&UsbBulkAgent::on_timer);
             so_subscribe(m_board).event(&UsbBulkAgent::on_transmit_data);
         }
 

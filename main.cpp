@@ -27,7 +27,7 @@ namespace {
 
     static std::atomic_bool s_exit{false};
 
-    so_5::environment_t* s_env;
+    so_5::wrapped_env_t* s_env;
 
     void signal_handler ([[maybe_unused]] int sig) {
         std::cout << "Received signal ";
@@ -195,30 +195,36 @@ int main(const int argc, char *argv[3]) {
     so_5::wrapped_env_t sobj([&](so_5::environment_t & env) {
 
             mbox = env.create_mbox();
-            // Create a coop with main agent inside.
-            env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 4U).binder(),
-                [&](so_5::coop_t & coop) mutable {
-                    // mbox = env.create_mbox();
-                //mbox = coop.make_agent<main_agent>(...)->so_direct_mbox();
-                    coop.make_agent<usb_agent_t>(mbox, usb_bulk);
-                    coop.make_agent<device_t>(mbox);
-                    //coop.make_agent<gui::Gui>(mbox, coop, [](){signal_handler(1);});
-                    s_env = &env;
-            });
 
-        env.introduce_coop(
-            [&](so_5::coop_t & coop) mutable {
+            auto parent_coop = env.make_coop(/*so_5::disp::thread_pool::make_dispatcher(env, 3U).binder()*/);
+            parent_coop->make_agent<usb_agent_t>(mbox, usb_bulk);
+            parent_coop->make_agent<device_t>(mbox);
 
-            //mbox = coop.make_agent<main_agent>(...)->so_direct_mbox();
-                coop.make_agent<gui::Gui>(mbox, coop, [](){signal_handler(1);});
+            auto gui_coop = env.make_coop(parent_coop->handle());
+            gui_coop->make_agent<gui::Gui>(mbox, gui_coop, [](){signal_handler(1);});
+
+            env.register_coop(std::move(parent_coop));
+            env.register_coop(std::move(gui_coop));
+
+            // env.introduce_coop(so_5::disp::thread_pool::make_dispatcher(env, 6U).binder(),
+            //     [&](so_5::coop_t & coop) mutable {
+            //
+            //         coop.make_agent<usb_agent_t>(mbox, usb_bulk);
+            //         coop.make_agent<device_t>(mbox);
+            //
+            //         s_env = &env;
+            // });
+
+            // env.introduce_coop(
+            //     [&](so_5::coop_t & coop) mutable {
+            //
+            //     //mbox = coop.make_agent<main_agent>(...)->so_direct_mbox();
+            //         coop.make_agent<gui::Gui>(mbox, coop, [](){signal_handler(1);});
+            // });
+
         });
-        }/*,
-    //     [](so_5::environment_params_t & params) {
-    //         // All SObjectizer-related activities will be performed
-    //         // on the context of the single worker thread.
-    //         params.infrastructure_factory(
-    //             so_5::env_infrastructures::simple_mtsafe::factory());
-    //     }*/);
+
+    s_env = &sobj;
 
     sobj.join();
 

@@ -8,20 +8,20 @@
 
 namespace gui {
 
-void Gui::make_agents(so_5::coop_t & coop) noexcept {
+void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
         auto update_screen = [this]() {
             m_screen.PostEvent(Event::Custom);
         };
 
-        coop.make_agent<WindowGPIO>(m_board, log, m_animation_timer,update_screen, m_gpio);
-        coop.make_agent<CoreControl>(m_board, m_core_control);
-        auto return_tab = coop.make_agent<Returns>(m_board, update_screen);
+        coop->make_agent<WindowGPIO>(m_board, log, m_animation_timer,update_screen, m_gpio);
+        coop->make_agent<CoreControl>(m_board, m_core_control);
+        auto return_tab = coop->make_agent<Returns>(m_board, update_screen);
         Component c{return_tab};
         m_tab_returns = c;
     }
 
     void Gui::so_define_agent() {
-        m_timer_loop = so_5::send_periodic<loop_signal>(*this, 0ms, 25ms);
+        m_timer_loop = so_5::send_periodic<loop_signal>(*this, 0ms, 30ms);
 
     }
 
@@ -35,6 +35,7 @@ void Gui::make_agents(so_5::coop_t & coop) noexcept {
     }
 
     void Gui::on_loop(mhood_t<loop_signal>) noexcept {
+
         if (m_render_loop && !m_render_loop->HasQuitted()) {
 
             if (m_animation_timer.check_all()) {

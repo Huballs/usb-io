@@ -58,6 +58,10 @@ namespace device {
             ,  m_board{std::move(board)}
         {}
 
+        ~Device() {
+
+        }
+
         void            set_gpio(size_t n, gpio_state_t state) noexcept;
         gpio_state_t    get_gpio(size_t n) const noexcept;
 
