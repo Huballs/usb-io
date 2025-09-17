@@ -22,7 +22,6 @@ void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
 
     void Gui::so_define_agent() {
         m_timer_loop = so_5::send_periodic<loop_signal>(*this, 0ms, 30ms);
-
     }
 
     void Gui::so_evt_start() {

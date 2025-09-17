@@ -53,9 +53,10 @@ namespace device {
     class Device final : public so_5::agent_t {
 
     public:
-        Device(context_t ctx, so_5::mbox_t board)
+        Device(context_t ctx, so_5::mbox_t board_usb, so_5::mbox_t board_device)
            :  so_5::agent_t{std::move(ctx)}
-            ,  m_board{std::move(board)}
+            ,  m_board_usb{std::move(board_usb)}
+            , m_board_device{std::move(board_device)}
         {}
 
         ~Device() {
@@ -90,7 +91,8 @@ namespace device {
 
         void on_command(mhood_t<sig_command>) noexcept;
 
-        so_5::mbox_t    m_board;
+        so_5::mbox_t    m_board_usb;
+        so_5::mbox_t    m_board_device;
         bool            m_conected {false};
         proto::status_t m_status;
         std::array<gpio_state_t, s_gpio_count> m_gpio_states;
@@ -195,13 +197,13 @@ namespace device {
                             RET Device<DeviceTemplateParams>::
 
     DeviceDef(void)  so_define_agent() {
-        so_subscribe(m_board).event(&Device::on_script);
-        so_subscribe(m_board).event(&Device::on_connected);
-        so_subscribe(m_board).event(&Device::on_disconnected);
-        so_subscribe(m_board).event(&Device::on_error);
-        so_subscribe(m_board).event(&Device::on_gpio_set);
-        so_subscribe(m_board).event(&Device::on_recieve);
-        so_subscribe(m_board).event(&Device::on_command);
+        so_subscribe(m_board_usb).event(&Device::on_connected);
+        so_subscribe(m_board_usb).event(&Device::on_disconnected);
+        so_subscribe(m_board_usb).event(&Device::on_error);
+        so_subscribe(m_board_usb).event(&Device::on_recieve);
+        so_subscribe(m_board_device).event(&Device::on_command);
+        so_subscribe(m_board_device).event(&Device::on_gpio_set);
+        so_subscribe(m_board_device).event(&Device::on_script);
     }
 
     DeviceDef(void) send(proto::data_gpio_t gpio_data) noexcept {
@@ -219,7 +221,7 @@ namespace device {
     }
 
     DeviceDef(void) send(const DATA_T& data) noexcept {
-        so_5::send<usb::sig_transmit_data<DATA_SIZE>>(m_board, data);
+        so_5::send<usb::sig_transmit_data<DATA_SIZE>>(m_board_usb, data);
     }
 
     DeviceDef(void) set_gpio(size_t n, gpio_state_t state) noexcept {
@@ -304,7 +306,7 @@ namespace device {
             switch (header->type) {
                 case proto::data_type_t::STATUS: {
                     m_status = *detail::cast_to_data_status(result->data);
-                    so_5::send<sig_status>(m_board, m_status);
+                    so_5::send<sig_status>(m_board_device, m_status);
                     break;
                 }
                 case proto::data_type_t::GPIO: {
@@ -334,18 +336,18 @@ namespace device {
             default: mess = ("Usb Unknown error");
         }
 
-        so_5::send<sig_message>(m_board, mess);
+        so_5::send<sig_message>(m_board_device, mess);
     }
 
     DeviceDef(void) on_connected(mhood_t<usb::sig_hotplug>) noexcept {
         m_conected = true;
-        so_5::send<sig_connected>(m_board);
+        so_5::send<sig_connected>(m_board_device);
         request_gpio();
     }
 
     DeviceDef(void) on_disconnected(mhood_t<usb::sig_hotunplug>) noexcept {
         m_conected = false;
-        so_5::send<sig_disconnected>(m_board);
+        so_5::send<sig_disconnected>(m_board_device);
     }
 
     DeviceDef(void) parse_gpio(const DATA_T& data) noexcept {
@@ -357,7 +359,7 @@ namespace device {
         if ((header->size > s_gpio_count)
             || (header->size * sizeof(proto::data_gpio_t) + sizeof(proto::data_header_t)) > DATA_SIZE
         ) {
-            so_5::send<sig_message>(m_board, "GPIO packet size too big");
+            so_5::send<sig_message>(m_board_device, "GPIO packet size too big");
             return;
         }
 
@@ -367,13 +369,13 @@ namespace device {
             auto [n, gpio_state] = detail::gpio_data_to_state(*gpio_data);
 
             if (n >= m_gpio_states.size()) {
-                so_5::send<sig_message>(m_board, "GPIO incorrect N");
+                so_5::send<sig_message>(m_board_device, "GPIO incorrect N");
                 continue;
             }
 
             m_gpio_states.at(n) = gpio_state;
 
-            so_5::send<sig_gpio_new_state>(m_board, n, gpio_state);
+            so_5::send<sig_gpio_new_state>(m_board_device, n, gpio_state);
         }
     }
 
@@ -385,9 +387,9 @@ namespace device {
         auto size = strnlen(mess_ptr, max_size);
 
         if ((size == max_size) || (size == 0U)) {
-            so_5::send<sig_message>(m_board, "Recieved a text message that's too big");
+            so_5::send<sig_message>(m_board_device, "Recieved a text message that's too big");
         } else {
-            so_5::send<sig_message>(m_board, mess_ptr);
+            so_5::send<sig_message>(m_board_device, mess_ptr);
         }
     }
 
@@ -406,26 +408,26 @@ namespace device {
             auto var_ptr = reinterpret_cast<const uint8_t*>(var_data + 1U);
 
             if (var_data->size > max_var_size()) {
-                so_5::send<sig_message>(m_board, "Error in var size");
+                so_5::send<sig_message>(m_board_device, "Error in var size");
                 return;
             }
 
             const auto name_size = strnlen(var_data->name, proto::s_var_name_max_size);
 
             if (name_size == proto::s_var_name_max_size) {
-                so_5::send<sig_message>(m_board, "Error in varnamee size");
+                so_5::send<sig_message>(m_board_device, "Error in varnamee size");
                 return;
             }
 
             switch (var_data->type) {
                 case proto::variable_t::BOOL: {
                     const bool var = *reinterpret_cast<const bool*>(var_ptr);
-                    so_5::send<sig_variable>(m_board, var_data->name, std::to_string(var));
+                    so_5::send<sig_variable>(m_board_device, var_data->name, std::to_string(var));
                     break;
                 }
                 case proto::variable_t::FLOAT: {
                     const float var = *reinterpret_cast<const float*>(var_ptr);
-                    so_5::send<sig_variable>(m_board, var_data->name, std::to_string(var));
+                    so_5::send<sig_variable>(m_board_device, var_data->name, std::to_string(var));
                     break;
                 }
                 case proto::variable_t::STR: {
@@ -436,14 +438,14 @@ namespace device {
                     auto str_size = strnlen(var, max_str_size);
 
                     if (str_size == max_str_size) {
-                        so_5::send<sig_message>(m_board, "Error in str var size");
+                        so_5::send<sig_message>(m_board_device, "Error in str var size");
                         return;
                     }
 
-                    so_5::send<sig_variable>(m_board, var_data->name, var);
+                    so_5::send<sig_variable>(m_board_device, var_data->name, var);
                     break;
                 }
-                default: so_5::send<sig_message>(m_board, "Unknown var type received");
+                default: so_5::send<sig_message>(m_board_device, "Unknown var type received");
             }
 
             offset += var_data->size;
@@ -497,7 +499,7 @@ namespace device {
             }
 
             default: {
-                so_5::send<sig_message>(m_board, "Unknown command");
+                so_5::send<sig_message>(m_board_device, "Unknown command");
                 return;
             }
         }

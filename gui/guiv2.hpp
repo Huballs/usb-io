@@ -35,17 +35,15 @@ namespace gui {
 
     class Gui final : public so_5::agent_t {
     public:
-        Gui(context_t ctx, so_5::mbox_t board,so_5::coop_unique_holder_t& coop, std::function<void(void)> f_on_exit)
+        Gui(context_t ctx, so_5::mbox_t board, std::function<void(void)> f_on_exit)
            :  so_5::agent_t{std::move(ctx)}
         ,  m_board{std::move(board)}
         ,  m_f_on_exit(std::move(f_on_exit)){
 
-            make_agents(coop);
+            //make_agents(coop);
         }
 
-        ~Gui() {
-
-        }
+        ~Gui() = default;
 
         void so_define_agent() override;
         void so_evt_start() override;

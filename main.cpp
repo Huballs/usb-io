@@ -95,6 +95,48 @@ arguments_t parse_arguments(int argc, char *argv[]) {
 }
 
 }
+
+class my_run_time_stats_listener : public so_5::agent_t
+{
+public :
+    my_run_time_stats_listener( context_t ctx )
+        :    so_5::agent_t( ctx )
+{}
+
+    void so_define_agent() override
+{
+    so_default_state().event(
+        so_environment().stats_controller().mbox(),
+        &my_run_time_stats_listener::evt_quantity );
+
+    so_default_state().event(
+    so_environment().stats_controller().mbox(),
+    &my_run_time_stats_listener::evt_activity );
+}
+
+    void so_evt_start() override
+{
+    so_environment().stats_controller().turn_on();
+}
+
+private :
+    void evt_quantity( const so_5::stats::messages::quantity< std::size_t > & evt ) {
+    // Just show to standard output.
+        std::cout << evt.m_prefix << evt.m_suffix << ": " << evt.m_value << std::endl;
+    }
+
+    void evt_activity( const so_5::stats::messages::work_thread_activity& evt) {
+        std::cout << evt.m_prefix
+                    << ": " << "avrg_time: "
+                    << evt.m_stats.m_working_stats.m_avg_time.count()
+                    << ", " << "count: "
+                    << evt.m_stats.m_working_stats.m_count
+                    << ", " << "total_time: "
+                    << evt.m_stats.m_working_stats.m_total_time.count()
+                    << std::endl;
+    }
+};
+
 // TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 int main(const int argc, char *argv[3]) {
 
@@ -155,53 +197,23 @@ int main(const int argc, char *argv[3]) {
         std::cerr << "Failed to set SIGTERM handler" << std::endl;
     }
 
-    // auto usb_thread = std::jthread([&]() {
-    //     //usb.start();
-    //     while (true) {
-    //         usb_bulk.loop();
-    //
-    //         auto data = usb_bulk.make_tx_data();
-    //
-    //         usb_bulk.transmit([](usb::status_t s) {
-    //             std::cout << "transmit: " << (int)s << std::endl;
-    //         }, &data);
-    //
-    //         if (s_exit == true) {
-    //             std::cout << "exiting" << std::endl;
-    //             return;
-    //         }
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //     }
-    // });
-
-    // auto gui_thread = std::jthread([&]() {
-    //     //gui::run(device_ctrl, s_exit);
-    //         Counter<uint64_t> counter(500ms);
-    //         static uint64_t last_count = 0;
-    //         while (1) {
-    //             if (last_count != counter.cnt()) {
-    //                 //std::cout << counter.cnt() << std::endl;
-    //                 last_count = counter.cnt();
-    //             }
-    //         };
-    // });
-
-    //gui_thread.detach();
-
-
-
-    so_5::mbox_t mbox;
+    so_5::mbox_t mbox_usb;
+    so_5::mbox_t mbox_device;
 
     so_5::wrapped_env_t sobj([&](so_5::environment_t & env) {
 
-            mbox = env.create_mbox();
+            mbox_usb = env.create_mbox();
+            mbox_device = env.create_mbox();
 
-            auto parent_coop = env.make_coop(/*so_5::disp::thread_pool::make_dispatcher(env, 3U).binder()*/);
-            parent_coop->make_agent<usb_agent_t>(mbox, usb_bulk);
-            parent_coop->make_agent<device_t>(mbox);
+            auto parent_coop = env.make_coop(/*so_5::disp::thread_pool::make_dispatcher(env, 2U).binder()*/);
+            parent_coop->make_agent<usb_agent_t>(mbox_usb, usb_bulk);
+            parent_coop->make_agent<device_t>(mbox_usb, mbox_device);
+
+            //parent_coop->make_agent<my_run_time_stats_listener>();
 
             auto gui_coop = env.make_coop(parent_coop->handle());
-            gui_coop->make_agent<gui::Gui>(mbox, gui_coop, [](){signal_handler(1);});
+            auto gui_agent = gui_coop->make_agent<gui::Gui>(mbox_device, [](){signal_handler(1);});
+            gui_agent->make_agents(gui_coop);
 
             env.register_coop(std::move(parent_coop));
             env.register_coop(std::move(gui_coop));
