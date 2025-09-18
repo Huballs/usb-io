@@ -24,6 +24,7 @@
 #include "device_status.hpp"
 #include "returns.hpp"
 #include "../device/device_control.hpp"
+#include "ps_data.hpp"
 
 constexpr std::string_view s_open_file_parent_folder {".."};
 
@@ -61,11 +62,13 @@ namespace gui {
         Component m_modal_open_file;
         Component m_core_control;
         Component m_render;
+        Component m_power_suply_data;
 
         std::shared_ptr<detail::Logger> m_logger;
         std::shared_ptr<WindowTabs> m_tabs;
         std::shared_ptr<ConnStatus> m_conn_status;
         std::shared_ptr<DeviceStatus> m_device_status;
+
 
         Component m_tab_returns;
 

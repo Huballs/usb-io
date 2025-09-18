@@ -176,15 +176,6 @@ int main(const int argc, char *argv[3]) {
     using device_t = device::Device<BUFFER_TOTAL_SIZE
                     , usb_t::tx_transfer_data_t>;
 
-    //buffers::SimpleBuffer<uint8_t> rx_buffer(BUFFER_TOTAL_SIZE);
-    //buffer.set_process_function(processor);
-
-    //device::DeviceControl device_ctrl( usb, gui::log);
-
-    //s_device = &device_ctrl;
-
-    //usb.set_logger(gui::log);
-
     auto sig_res = std::signal(SIGINT, signal_handler);
 
     if (sig_res == SIG_ERR) {

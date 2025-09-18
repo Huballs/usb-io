@@ -15,6 +15,8 @@ void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
 
         coop->make_agent<WindowGPIO>(m_board, log, m_animation_timer,update_screen, m_gpio);
         coop->make_agent<CoreControl>(m_board, m_core_control);
+        coop->make_agent<PSData>(m_board, m_power_suply_data);
+
         auto return_tab = coop->make_agent<Returns>(m_board, update_screen);
         Component c{return_tab};
         m_tab_returns = c;
@@ -131,6 +133,8 @@ void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
         m_conn_status = std::make_shared<ConnStatus>();
         m_device_status = std::make_shared<DeviceStatus>();
 
+
+
         m_tabs->add_tab("returns", m_tab_returns);
 
         auto bottom = Container::Vertical({
@@ -143,7 +147,7 @@ void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
         })
 
         auto left_layout = Container::Vertical({
-            Container::Horizontal({m_menu, sep, m_conn_status, sep, m_device_status, sep})
+            Container::Horizontal({m_menu, sep, m_conn_status, sep, m_device_status, sep, m_power_suply_data})
             , ResizableSplitTop(
             m_tabs | flex_grow
                     , bottom | xflex_grow, &split_size)
