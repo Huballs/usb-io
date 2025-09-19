@@ -34,6 +34,19 @@ namespace device {
         , GET_STATUS
     };
 
+    enum class power_supply_t {
+        VIO
+        , VDD
+        , V33
+    };
+
+    enum class power_supply_param_t {
+        VOLTAGE
+        , CURRENT
+        , OVERCURRENT
+        , ONOFF
+    };
+
     struct sig_connected{};
     struct sig_disconnected{};
     struct sig_status{proto::status_t status;};

@@ -35,11 +35,11 @@ namespace gui {
         }
 
         template<typename T>
-        void set( power_supply_param_t param, T value) {
+        void set( device::power_supply_param_t param, T value) {
             switch (param) {
-            case power_supply_param_t::VOLTAGE: voltage(value); break;
-                case power_supply_param_t::CURRENT: current(value); break;
-                case power_supply_param_t::OVERCURRENT: over_current(value); break;
+            case device::power_supply_param_t::VOLTAGE: voltage(value); break;
+                case device::power_supply_param_t::CURRENT: current(value); break;
+                case device::power_supply_param_t::OVERCURRENT: over_current(value); break;
                 default: break;
             }
         }
@@ -96,7 +96,7 @@ namespace gui {
     }
 
     template<typename T>
-    void PSData::set(power_supply_t ps, power_supply_param_t param, T value) {
+    void PSData::set(device::power_supply_t ps, device::power_supply_param_t param, T value) {
         if (auto it = m_supply_to_component.find(ps); it != m_supply_to_component.end()) {
             it->second->set(param, value);
         }
@@ -107,7 +107,7 @@ namespace gui {
             comp->refresh();
         }
     }
-    void PSData::update(power_supply_t ps) {
+    void PSData::update(device::power_supply_t ps) {
         if (auto it = m_supply_to_component.find(ps); it != m_supply_to_component.end()) {
             it->second->refresh();
         }
@@ -116,9 +116,9 @@ namespace gui {
 
     void PSData::make_component() {
 
-        m_supply_to_component[power_supply_t::VDD] = std::make_shared<PSComponent>("VDD");
-        m_supply_to_component[power_supply_t::V33] = std::make_shared<PSComponent>("3V3");
-        m_supply_to_component[power_supply_t::VIO] = std::make_shared<PSComponent>("VIO");
+        m_supply_to_component[device::power_supply_t::VDD] = std::make_shared<PSComponent>("VDD");
+        m_supply_to_component[device::power_supply_t::V33] = std::make_shared<PSComponent>("3V3");
+        m_supply_to_component[device::power_supply_t::VIO] = std::make_shared<PSComponent>("VIO");
 
         Components components;
 

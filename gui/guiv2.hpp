@@ -63,6 +63,7 @@ namespace gui {
         Component m_core_control;
         Component m_render;
         Component m_power_suply_data;
+        Component m_settings;
 
         std::shared_ptr<detail::Logger> m_logger;
         std::shared_ptr<WindowTabs> m_tabs;

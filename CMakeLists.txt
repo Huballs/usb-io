@@ -60,6 +60,9 @@ add_executable(usb_io main.cpp
         gui/returns.hpp
         gui/ps_data.cpp
         gui/ps_data.hpp
+        gui/settings.cpp
+        gui/settings.hpp
+        gui/settings.hpp
 )
 
 target_link_libraries(usb_io taywee::args ftxui::ftxui sobjectizer::StaticLib libusb::libusb)

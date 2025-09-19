@@ -5,6 +5,7 @@
 #include "guiv2.hpp"
 #include "core_control.hpp"
 #include "returns.hpp"
+#include "settings.hpp"
 
 namespace gui {
 
@@ -16,6 +17,7 @@ void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
         coop->make_agent<WindowGPIO>(m_board, log, m_animation_timer,update_screen, m_gpio);
         coop->make_agent<CoreControl>(m_board, m_core_control);
         coop->make_agent<PSData>(m_board, m_power_suply_data);
+        coop->make_agent<Settings>(m_board, m_settings);
 
         auto return_tab = coop->make_agent<Returns>(m_board, update_screen);
         Component c{return_tab};
@@ -133,9 +135,8 @@ void Gui::make_agents(so_5::coop_unique_holder_t & coop) noexcept {
         m_conn_status = std::make_shared<ConnStatus>();
         m_device_status = std::make_shared<DeviceStatus>();
 
-
-
         m_tabs->add_tab("returns", m_tab_returns);
+        m_tabs->add_tab("settings", m_settings);
 
         auto bottom = Container::Vertical({
             m_logger  | yflex_shrink
